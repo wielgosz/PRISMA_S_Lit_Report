@@ -1,0 +1,120 @@
+group,term
+AOI,Coordinate
+AOI,geolocation
+AOI,isochrone
+AOI,Lat
+AOI,Long
+AOI,Latitude
+AOI,Longitude
+AOI,pin
+AOI,Point
+AOI,Polygon
+AOI,radius
+Commodity,Cocoa
+Commodity,Arabica
+Commodity,Coffee
+Commodity,Robusta
+Commodity,animals
+Commodity,Beef
+Commodity,Cattle
+Commodity,dairy
+Commodity,Feed
+Commodity,forages
+Commodity,grazing land
+Commodity,Livestock
+Commodity,pasture
+Commodity,agroforestry
+Commodity,Banana
+Commodity,barley
+Commodity,citrus
+Commodity,Commodities
+Commodity,Commodity
+Commodity,corn
+Commodity,Cotton
+Commodity,fiber
+Commodity,hemp
+Commodity,Maize
+Commodity,oats
+Commodity,rice
+Commodity,Sorghum
+Commodity,Sugar
+Commodity,Tea
+Commodity,Wheat
+Commodity,Palm
+Commodity,Rubber
+Commodity,Soy
+Commodity,Soya
+Commodity,paper
+Commodity,pulp
+Commodity,Timber
+Commodity,planted trees
+Commodity,eucalyptus
+Commodity,Wood
+Supply Chain Node,Concession
+Supply Chain Node,estate
+Supply Chain Node,Farm
+Supply Chain Node,field
+Supply Chain Node,harvested area
+AOI,Land Unit
+AOI,LMU
+AOI,Management Unit
+Supply Chain Node,paddock
+AOI,Parcel
+Supply Chain Node,Plantation
+AOI,Plot
+Supply Chain Node,Production Unit
+Supply Chain Node,productive land
+Supply Chain Node,property
+Supply Chain Node,ranch
+AOI,Adminstrative Area
+AOI,District
+AOI,Jurisdiction
+AOI,municipality
+AOI,province
+AOI,region
+AOI,region of origin
+AOI,sourcing region
+AOI,subdistrict
+AOI,supply region
+Supply Chain Node,aggregation point
+Supply Chain Node,aggregator
+Supply Chain Node,Barge head
+Supply Chain Node,Bin
+Supply Chain Node,Buying Agent
+Supply Chain Node,Buying Station
+Supply Chain Node,catchment area
+Supply Chain Node,Coop
+Supply Chain Node,Cooperative
+Supply Chain Node,Facility
+Supply Chain Node,first point
+Supply Chain Node,Gin
+Supply Chain Node,ginner
+Supply Chain Node,Landscape
+Supply Chain Node,Logistics Hub
+Supply Chain Node,Market shed
+Supply Chain Node,Mill
+Supply Chain Node,Port
+Supply Chain Node,processing facility
+Supply Chain Node,processor
+Supply Chain Node,factory
+Supply Chain Node,Rail Head
+Supply Chain Node,rail terminal
+Supply Chain Node,refinery
+Supply Chain Node,road terminal
+Supply Chain Node,shed
+Supply Chain Node,Silo
+Supply Chain Node,Site
+Supply Chain Node,Slaughterhouse
+Supply Chain Node,Sourcing Area
+Supply Chain Node,Supplier
+Supply Chain Node,Supply shed
+Supply Chain Node,Supplyshed
+Supply Chain Node,terminal
+Supply Chain Node,Warehouse
+Supply Chain Node,Wholesaler
+Supply Chain Node,Farmer Association
+Supply Chain Node,Farmer Group
+Supply Chain Node,Farmer Organization
+Supply Chain Node,Producer Association
+Supply Chain Node,Producer Group
+Supply Chain Node,Producer Organization

@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prisma-s-lit-review"
+version = "1.1.0"
+description = "PRISMA-S aligned keyword corpus analysis for systematic literature reviews"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["PRISMA-S", "systematic review", "keyword search", "literature review", "NLP"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+    "pandas>=2.0",
+    "openpyxl>=3.1",
+    "PyMuPDF>=1.23",
+    "PyPDF2>=3.0",
+    "python-docx>=1.1",
+    "google-api-python-client>=2.100",
+    "google-auth-httplib2>=0.2",
+    "google-auth-oauthlib>=1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+prisma-s = "prisma_s.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/wielgosz/PRISMA_S_Lit_Report"
+"Bug Tracker" = "https://github.com/wielgosz/PRISMA_S_Lit_Report/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["prisma_s*"]
+
+[tool.setuptools.package-data]
+"*" = ["keywords/*.csv", "protocol/*.md"]
