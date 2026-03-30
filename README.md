@@ -49,6 +49,14 @@ pip install -e ".[dev]"
 
 ## Quick start
 
+### Interactive wizard (recommended for first use)
+
+Run the guided wizard — it will ask you for search terms, source location, batch ID, and output folder, then run the analysis automatically:
+
+```bash
+prisma-s wizard
+```
+
 ### Python API
 
 ```python
@@ -106,7 +114,12 @@ prisma-s --version
 
 ## Output format
 
-A single Excel sheet (`Long_AllTerms`) in long format:
+Every run produces an Excel workbook with **two sheets**:
+
+- **`Long_AllTerms`** — full keyword × document matrix (one row per document × term combination)
+- **`PRISMA-S_Compliance`** — all 16 PRISMA-S checklist items, showing which were `APPLIED`, `PARTIAL`, `NOT_APPLIED`, or `NOT_APPLICABLE` for this run, with scope notes explaining why
+
+### Long_AllTerms columns
 
 | Column | Description |
 |--------|-------------|
@@ -188,11 +201,13 @@ pytest tests/ -v
 ```
 PRISMA_S_Lit_Report/
 ├── prisma_s/                  # Installable Python package
-│   ├── __init__.py
+│   ├── __init__.py            # Package version and public API
 │   ├── keywords.py            # Keyword dictionary loader
 │   ├── extract.py             # PDF + DOCX text extraction
 │   ├── search.py              # Keyword matching engine
-│   ├── drive.py               # Google Drive integration
+│   ├── drive.py               # Google Drive integration (URL parsing + download)
+│   ├── compliance.py          # All 16 PRISMA-S items with scope notes and runtime reporting
+│   ├── wizard.py              # Interactive setup wizard (prisma-s wizard)
 │   ├── runner.py              # Analysis orchestrator
 │   └── cli.py                 # Command-line interface
 ├── keywords/

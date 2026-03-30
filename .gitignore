@@ -2,6 +2,9 @@
 credentials.json
 token.json
 
+# Developer utility scripts
+push_to_github.bat
+
 # Python
 __pycache__/
 *.py[cod]
