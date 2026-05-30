@@ -1,0 +1,44 @@
+protocol_version: v1.5
+inherits_keyword_protocol: v1.3
+purpose: Frozen extracted-text corpus and blocking extraction QA for reproducible keyword counts.
+extraction:
+  primary_extractor: pymupdf
+  fallback_extractors: []
+  per_document_timeout_seconds: 180
+  max_retries: 1
+  write_partial_page_failures: true
+  normalize_line_endings: true
+  normalize_unicode: NFC
+  strip_trailing_whitespace: true
+  collapse_internal_whitespace_for_hash: false
+  require_page_count: true
+  block_on_timeout: true
+  block_on_error: true
+  block_on_missing_text_artifact: true
+  block_on_empty_text: true
+qa_thresholds:
+  char_count_relative_tolerance: 0.02
+  page_count_must_match_baseline: true
+  warn_on_empty_pages: true
+  block_on_unresolved_statuses:
+    - EXTRACTION_TIMEOUT
+    - EXTRACTION_ERROR
+    - MISSING_TEXT_ARTIFACT
+    - EMPTY_TEXT
+    - TEXT_HASH_CHANGED_UNAPPROVED
+    - PAGE_COUNT_CHANGED_UNAPPROVED
+keyword_counting:
+  executable_dictionary: config/keyword_dictionary_v1_3.csv
+  active_dictionary_terms_expected: 98
+  matching_rule: exact_case_insensitive_regex_with_alphanumeric_boundaries
+  variant_rollup: canonical_term
+  consume_only_frozen_text: true
+  refuse_pdf_reextraction: true
+outputs:
+  frozen_text_dir: data/frozen_text/v1_5/text
+  normalized_text_dir: data/frozen_text/v1_5/normalized_text
+  manifest_csv: data/frozen_text/v1_5/frozen_text_manifest.csv
+  events_jsonl: data/frozen_text/v1_5/extraction_events.jsonl
+  qa_report_csv: outputs/v15_validation/frozen_text_qa_report.csv
+  preflight_report_csv: outputs/v15_validation/preflight_gate_report.csv
+  keyword_output_dir: outputs/v15_keyword_test_from_frozen_text

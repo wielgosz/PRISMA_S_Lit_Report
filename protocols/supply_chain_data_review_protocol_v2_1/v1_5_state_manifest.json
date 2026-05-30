@@ -1,0 +1,12 @@
+{
+  "package": "prisma_s_protocol_repo_v1_5",
+  "created": "2026-05-27",
+  "basis": "v1.4 package exported 2026-05-18 plus current chat and pasted Importing PDFs and Protocol history",
+  "discarded_provisional_rebuild": true,
+  "requires_user_validation_before_protocol_rerun": true,
+  "new_corpus_additions": [
+    "RTRS-Standard-Responsible-Soy-production-1st-DRAFT-4.0.pdf",
+    "ECF-EUDR_Article-9-10-11_-CLEAN-28.05.25.pdf"
+  ],
+  "new_standard_output": "Table E1 plus two context columns"
+}

@@ -1,251 +1,121 @@
-# prisma-s-lit-review
+# PRISMA-S / Supply Chain Data Review Protocol Update
 
-A transparent, reproducible Python library for keyword corpus analysis of PDF and Word documents, built on PRISMA-S methodology.
+This update package adds the **Supply Chain Data Review Protocol v2.1** and the
+**Supply Chain Data Review Desktop Runner v2.2-alpha** for Windows desktop use.
 
-Designed so that any researcher can run the **same keyword search** on their own Google Drive folder of collected literature and get identical, auditable results.
+The package is intended to be copied into the repository:
 
----
+<https://github.com/wielgosz/PRISMA_S_Lit_Report>
 
-## What it does
+## Contents
 
-- Downloads PDFs and `.docx` files from a **Google Drive folder** (or reads a local path)
-- Extracts full text from each document
-- Counts occurrences of every term in a versioned **keyword dictionary**
-- Writes a **long-format Excel matrix** (one row per document × term) with full reproducibility metadata
+```text
+protocols/
+  supply_chain_data_review_protocol_v2_1/
+    README.md
+    CHANGELOG.md
+    MANIFEST.yml
+    config/
+    docs/
+    scripts/
+    schemas/
+    outputs/v2_1_reference_outputs/
 
-Every output row records the **protocol version**, **keyword dictionary version**, **run timestamp**, and **source reference** so results can be independently replicated.
-
----
-
-## Methodology
-
-Keyword matching follows the locked **PRISMA-S Keyword Protocol v1.1** (`protocol/PRISMA_keyword_protocol_v1.1.md`):
-
-| Rule | Setting |
-|------|---------|
-| Case sensitivity | Case-insensitive |
-| Word matching | Exact word boundaries — no partial substrings |
-| Multi-word terms | Exact phrase, whitespace-flexible (handles OCR line-breaks) |
-| Stemming / lemmatisation | None |
-| Zero-count rows | Included for every document × term combination |
-
----
-
-## Installation
-
-```bash
-pip install prisma-s-lit-review
+desktop_runner/
+  Supply_Chain_Data_Review_Runner_v2_2_alpha/
+    README.md
+    app.py
+    build_windows.bat
+    templates/Supply_Chain_Data_Review_Input_Template_v2_2.xlsx
+    protocol_engine/
+    protocol_v2_1/
 ```
 
-Or install from source (recommended for development):
+## Protocol v2.1 summary
 
-```bash
-git clone https://github.com/wielgosz/PRISMA_S_Lit_Report.git
-cd PRISMA_S_Lit_Report
-pip install -e ".[dev]"
+Protocol v2.1 consolidates the May 2026 revisions to the Supply Chain Data
+Review workflow:
+
+- v1.3 exact keyword-counting rule retained: exact, case-insensitive regex
+  matching with alphanumeric boundaries; variants rolled up to canonical terms.
+- Frozen extracted-text workflow retained for reproducible keyword counts.
+- v1.4 dataset-reference extraction / canonicalization / crosswalk workflow
+  retained.
+- v2.1 output revisions added:
+  - v1.3-style tabular reference workbook;
+  - canonical SVG outputs only;
+  - SVG figures use `reports_referencing` rather than raw occurrence totals;
+  - Figure 1 excludes AOI terms and is limited to jurisdictional / landscape
+    terms;
+  - APA references added for the RTRS and ECF corpus additions.
+
+## Desktop Runner v2.2-alpha availability
+
+The desktop runner is available under:
+
+```text
+desktop_runner/Supply_Chain_Data_Review_Runner_v2_2_alpha/
 ```
 
----
+It is a Tkinter + PyInstaller `onedir` runner that uses the v2.1 protocol
+package as its backend engine and an Excel input workbook as the editable source
+of truth.
 
-## Quick start
+The editable input workbook is:
 
-### Interactive wizard (recommended for first use)
-
-Run the guided wizard — it will ask you for search terms, source location, batch ID, and output folder, then run the analysis automatically:
-
-```bash
-prisma-s wizard
+```text
+desktop_runner/Supply_Chain_Data_Review_Runner_v2_2_alpha/templates/Supply_Chain_Data_Review_Input_Template_v2_2.xlsx
 ```
 
-### Python API
+The input workbook contains:
 
-```python
-from prisma_s import run_analysis
+- `README`
+- `A1_Organizations`
+- `B1_Corpus_Documents`
+- `Dictionary`
+- `Run_Settings`
+- `Exclusions_Duplicates`
+- `New_Documents`
+- `Validation_Log`
 
-# From a local folder
-df = run_analysis(
-    batch_id="batch_01",
-    output_xlsx="results/batch_01.xlsx",
-    input_path="/path/to/your/pdfs",
-)
+The runner allows users to select:
 
-# From Google Drive
-df = run_analysis(
-    batch_id="batch_01",
-    output_xlsx="results/batch_01.xlsx",
-    drive_folder_id="YOUR_FOLDER_ID",
-    drive_credentials="credentials.json",
-)
+1. the Excel input workbook;
+2. a folder containing PDFs and/or batch ZIPs;
+3. an output folder.
 
-# Custom keyword dictionary
-df = run_analysis(
-    batch_id="batch_01",
-    output_xlsx="results/batch_01.xlsx",
-    input_path="/path/to/pdfs",
-    keyword_csv="keywords/keyword_dictionary_v1.2.csv",
-)
+It then validates the workbook and can run the protocol to generate a
+date-stamped output folder with Excel, SVG, CSV, QA, frozen-text, log, and
+manifest outputs.
+
+## Build the Windows desktop runner
+
+On a Windows machine with Python installed:
+
+```bat
+cd desktop_runner\Supply_Chain_Data_Review_Runner_v2_2_alpha
+python -m pip install -r requirements.txt
+build_windows.bat
 ```
 
-### Command-line interface
+The PyInstaller `onedir` executable folder will be created under:
 
-```bash
-# Local directory
-prisma-s run --batch batch_01 --output results/batch_01.xlsx --input /path/to/pdfs
-
-# Google Drive folder
-prisma-s run \
-  --batch batch_01 \
-  --output results/batch_01.xlsx \
-  --drive-folder YOUR_FOLDER_ID \
-  --drive-credentials credentials.json
-
-# Custom keyword dictionary
-prisma-s run \
-  --batch batch_01 \
-  --output results/batch_01.xlsx \
-  --input /path/to/pdfs \
-  --keywords keywords/keyword_dictionary_v1.2.csv
-
-# Check version
-prisma-s --version
+```text
+dist\SupplyChainDataReviewRunner\
 ```
 
----
+## Suggested repository commit message
 
-## Output format
+```text
+Add Supply Chain Data Review Protocol v2.1 and Desktop Runner v2.2-alpha
 
-Every run produces an Excel workbook with **two sheets**:
-
-- **`Long_AllTerms`** — full keyword × document matrix (one row per document × term combination)
-- **`PRISMA-S_Compliance`** — all 16 PRISMA-S checklist items, showing which were `APPLIED`, `PARTIAL`, `NOT_APPLIED`, or `NOT_APPLICABLE` for this run, with scope notes explaining why
-
-### Long_AllTerms columns
-
-| Column | Description |
-|--------|-------------|
-| `Batch` | Batch identifier supplied at runtime |
-| `Document Name` | Filename of the source document |
-| `Title` | Extracted document title |
-| `Year` | Extracted publication year |
-| `Group` | Keyword group (e.g. AOI, Commodity, Supply Chain Node) |
-| `Term` | Matched keyword |
-| `Count` | Number of matches in full document text |
-| `Protocol Version` | Locked protocol version used (e.g. `1.1`) |
-| `Keyword Dict Version` | Version of the keyword dictionary CSV used |
-| `Run UTC` | ISO-8601 timestamp of the run |
-| `Source Ref` | Local path or `gdrive:<folder_id>` |
-
----
-
-## Google Drive setup
-
-You need a Google Cloud project with the Drive API enabled and an OAuth 2.0 credentials file.
-
-1. Go to [console.cloud.google.com](https://console.cloud.google.com)
-2. Create or select a project
-3. Enable the **Google Drive API** (`APIs & Services → Library → Google Drive API`)
-4. Create credentials: `APIs & Services → Credentials → Create Credentials → OAuth client ID`
-   - Application type: **Desktop app**
-5. Download the JSON and save it as `credentials.json`
-6. On first run a browser window opens for consent; a `token.json` is cached for subsequent runs
-
-> Keep `credentials.json` and `token.json` out of version control — add them to `.gitignore`.
-
----
-
-## Keyword dictionary
-
-The bundled dictionary is `keywords/keyword_dictionary_v1.1.csv` — 120 terms across three groups:
-
-| Group | Description |
-|-------|-------------|
-| `AOI` | Area of Interest — geospatial and administrative terms |
-| `Commodity` | Agricultural commodity terms |
-| `Supply Chain Node` | Supply chain node and facility terms |
-
-CSV schema (`group,term`):
-
-```csv
-group,term
-AOI,Coordinate
-Commodity,Coffee
-Supply Chain Node,Mill
+Includes:
+- protocol v2.1 engine and reference outputs
+- frozen-text keyword workflow with v1.3 matching rule
+- v1.4 dataset crosswalk workflow
+- v1.3-style tabular reference workbook
+- corrected canonical SVG figure contract
+- APA updates for RTRS and ECF corpus additions
+- Tkinter/PyInstaller Windows desktop runner alpha
+- Excel input template as editable source of truth
 ```
-
-To create a new version, copy the CSV, make changes, and name it `keyword_dictionary_v1.2.csv`. Pass it via `--keywords`. The version is inferred from the filename automatically.
-
-**Never modify a previously used dictionary version** — create a new one to preserve replicability.
-
----
-
-## Replicating results
-
-To reproduce a previous run exactly:
-
-1. Use the same `Protocol Version` and `Keyword Dict Version` shown in the output
-2. Run against the same source documents (Drive folder ID or local path in `Source Ref`)
-3. The `Run UTC` timestamp will differ but all counts will be identical
-
----
-
-## Running tests
-
-```bash
-pytest tests/ -v
-```
-
----
-
-## Repository structure
-
-```
-PRISMA_S_Lit_Report/
-├── prisma_s/                  # Installable Python package
-│   ├── __init__.py            # Package version and public API
-│   ├── keywords.py            # Keyword dictionary loader
-│   ├── extract.py             # PDF + DOCX text extraction
-│   ├── search.py              # Keyword matching engine
-│   ├── drive.py               # Google Drive integration (URL parsing + download)
-│   ├── compliance.py          # All 16 PRISMA-S items with scope notes and runtime reporting
-│   ├── wizard.py              # Interactive setup wizard (prisma-s wizard)
-│   ├── runner.py              # Analysis orchestrator
-│   └── cli.py                 # Command-line interface
-├── keywords/
-│   └── keyword_dictionary_v1.1.csv
-├── protocol/
-│   └── PRISMA_keyword_protocol_v1.1.md
-├── tests/
-│   └── test_search.py
-├── scripts/
-│   └── keyword_corpus_analysis.py   # Original standalone script (retained for reference)
-├── pyproject.toml
-├── CHANGELOG.md
-└── README.md
-```
-
----
-
-## Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| `pandas` + `openpyxl` | DataFrame manipulation and Excel output |
-| `PyMuPDF` (`fitz`) | Primary PDF text extraction |
-| `PyPDF2` | Fallback PDF extraction |
-| `python-docx` | Word document text extraction |
-| `google-api-python-client` | Google Drive API |
-| `google-auth-oauthlib` | OAuth 2.0 authentication flow |
-
----
-
-## Versioning policy
-
-- **Protocol versions** (`protocol/`) are append-only — never edit a released version
-- **Keyword dictionaries** (`keywords/`) follow `keyword_dictionary_v{MAJOR}.{MINOR}.csv` naming
-- **Package versions** follow [Semantic Versioning](https://semver.org)
-
----
-
-## License
-
-MIT © Benjamin Wielgosz 2026

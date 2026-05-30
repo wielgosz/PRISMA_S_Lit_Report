@@ -1,0 +1,21 @@
+package_name: Supply Chain Data Review Protocol
+package_version: '2.1'
+inherits:
+  - PRISMA-S corpus term-count protocol v1.3
+  - PRISMA-S dataset-reference extraction/canonicalization/crosswalk protocol v1.4
+  - PRISMA-S frozen extracted-text corpus layer v1.5
+entrypoint: scripts/run_v20_full_protocol.py
+numbered_modules:
+  1: scripts/01_reconcile_corpus_v20.py
+  2: scripts/02_freeze_extract_text_corpus_v20.py
+  3: scripts/03_validate_frozen_corpus_v20.py
+  4: scripts/04_preflight_protocol_gate_v20.py
+  5: scripts/05_run_v13_keyword_counts_frozen_v20.py
+  6: scripts/06_compare_keyword_matrix_to_baseline_v20.py
+  7: scripts/07_normalize_c1_registry_v20.py
+  8: scripts/08_run_v14_stageA_extract_dataset_mentions_v20.py
+  9: scripts/09_run_v14_stageB_canonicalize_v20.py
+  10: scripts/10_run_v14_stageC_crosswalk_v20.py
+  11: scripts/11_run_v14_stageD_summary_v20.py
+  12: scripts/12_build_v20_output_package.py
+mandatory_keyword_matching_rule: exact_case_insensitive_regex_with_alphanumeric_boundaries

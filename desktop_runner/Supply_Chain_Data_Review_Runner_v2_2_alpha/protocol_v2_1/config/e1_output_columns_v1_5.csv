@@ -1,0 +1,3 @@
+column_name,table,purpose,source_basis,required_status
+Corpus context / use summary,Table E1,"Paragraph summary of use, context, purpose, constraints, limitations, or applicability of each E1 dataset as described in linked corpus PDFs.",Corpus PDFs linked through C1 Appendix E cross reference and dataset name/access URL/APA crosswalk.,STANDARD_OUTPUT_COLUMN_PENDING_VALIDATED_CORPUS
+External / non-corpus context summary,Table E1,"Paragraph summary of use, purpose, coverage, constraints, limitations, update status, or access conditions from preferred URL and web search by name/APA reference.",Preferred access URL plus official/provider web sources and targeted search.,STANDARD_OUTPUT_COLUMN_PENDING_VALIDATED_CORPUS

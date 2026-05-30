@@ -1,0 +1,40 @@
+protocol_name: Supply Chain Data Review Protocol
+protocol_version: '2.1'
+inheritance:
+  keyword_protocol: PRISMA-S corpus term-count protocol v1.3
+  dataset_protocol: PRISMA-S dataset-reference protocol v1.4
+  frozen_text_layer: PRISMA-S frozen text layer v1.5
+keyword_counting:
+  active_dictionary_terms_expected: 98
+  matching_rule: exact_case_insensitive_regex_with_alphanumeric_boundaries
+  variant_rollup: canonical_term
+  executable_dictionary: config/keyword_dictionary_v1_3.csv
+corpus_reconciliation:
+  ice_presentation_status: EXCLUDE_CONFIDENTIAL_PENDING_HISTORY_CONFIRMATION
+  converted_source_files_required:
+    - DOC-029_GPSNR_Reporting_Requirements_2024.pdf
+    - DOC-030_GTFI_Boas_Praticas_Fornecedores_Indiretos_2019.pdf
+    - DOC-050_Preferred_by_Nature_Risk_Assessment_Methodology_2017.pdf
+    - DOC-064_RSZPO_GeoRSPO_Platform_2019.pdf
+  new_additions:
+    - RTRS-Standard-Responsible-Soy-production-1st-DRAFT-4.0.pdf
+    - ECF-EUDR_Article-9-10-11_-CLEAN-28.05.25.pdf
+qa:
+  max_char_count_delta_pct_warning: 0.02
+  block_on_extraction_timeout: true
+  block_on_missing_text_artifact: true
+  block_on_missing_pdf: true
+  block_on_dictionary_mismatch: true
+outputs:
+  figure_color: '#F0B310'
+  figure_width: 900
+  figure_height: 650
+figure_contract:
+  canonical_svg_filenames:
+    - DCF_PRISMA_S_Figure_1_jurisdictional_terms.svg
+    - DCF_PRISMA_S_Figure_2_supply_chain_terms.svg
+    - DCF_PRISMA_S_Figure_3_farm_level_terms.svg
+  measure: reports_referencing
+  frame_style: axes_only_no_bounding_frame
+  figure_1_scope: jurisdictional_and_landscape_terms_only_excluding_aoi
+  title_style: unnumbered_titles

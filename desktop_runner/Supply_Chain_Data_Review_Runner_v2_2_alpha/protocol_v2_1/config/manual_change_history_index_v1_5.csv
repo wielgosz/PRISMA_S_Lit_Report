@@ -1,0 +1,11 @@
+sequence,change_area,decision,state_effect
+1,A1,Replace A1 entirely with user-curated canonical organization list; do not grandfather old A1 rows.,Clean organization links must be re-established by name/URL.
+2,B1/corpus,Remove listed manual-review rows with no PDFs/not necessary.,Reduces B1 to active PDF-backed corpus records.
+3,B1/corpus,Retain four formerly web/missing records by attaching user-supplied converted source PDFs.,"DOC-029, DOC-030, DOC-064, DOC-050 retained."
+4,C1,Apply DS-040 Serasa Experian Agro correction and DATA-044 Landsat Level-2 correction.,Carry forward into v1.5 dataset registry/crosswalk work.
+5,Template/E1,"Adopt uploaded figure/table template as standardized output; ignore READ ME, Figure 4, Figure E2.",Tables A1-E1 are standard outputs; E1 new subset of C1.
+6,E1,Add Table E1 as expansion/subset of C1 using DCF Relevance and Appendix E cross-reference.,E1 subset and context summaries become v1.5 standard output.
+7,E1/E-8,"Preserve GLAD Alerts, Integrated alerts, and RADD Alerts as distinct C1 datasets; group only in E1 presentation.",Sidecar analysis preserves all three evidence rows.
+8,Corpus additions,Add RTRS and ECF PDFs as new corpus additions after prior v1.3/v1.4 state.,Mark as NEW_CORPUS_ADDITION for future validated v1.3 rerun.
+9,A1 additions,Add RTRS and European Coffee Federation public URLs to A1.,Organization layer must include both new providers.
+10,Quality control,Discard provisional rebuild and require validated corpus/A1/B1 matching before rerunning v1.3 keyword counts.,No protocol outputs until user validates v1.5 corpus package.

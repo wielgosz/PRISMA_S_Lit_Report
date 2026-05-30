@@ -1,0 +1,8 @@
+{
+  "name": "Supply Chain Data Review Protocol Desktop Runner",
+  "version": "2.2-alpha",
+  "backend_protocol_version": "2.1",
+  "gui": "Tkinter",
+  "packaging": "PyInstaller onedir",
+  "input_workbook": "templates/Supply_Chain_Data_Review_Input_Template_v2_2.xlsx"
+}

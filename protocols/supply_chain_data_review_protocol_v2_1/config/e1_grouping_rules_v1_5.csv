@@ -1,0 +1,2 @@
+appendix_e_cross_reference,output_treatment,underlying_c1_dataset_names,rule
+E-8,Grouped presentation row in Table E1; preserve distinct evidence rows in C1 and sidecar analysis.,GLAD Alerts | Integrated alerts | RADD Alerts,Do not normalize C1 dataset names to aggregate name; Table E1 may display an alert-services sub-group for output/presentation only.

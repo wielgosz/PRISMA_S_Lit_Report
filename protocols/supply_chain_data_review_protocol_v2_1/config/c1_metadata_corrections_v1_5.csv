@@ -1,0 +1,6 @@
+record_id,correction,status,notes
+DS-040,Replace Agrosatélite mapping products metadata with Serasa Experian Agro due-diligence platform; preserve Agrosatélite as alias/variant.,CARRY_FORWARD_FROM_V1_4_HISTORY,Correction logged in May 18 v1.4 history.
+DATA-044,Replace general Landsat Collection 2 metadata with Landsat Collection 2 Level-2 Science Products URL and APA reference.,CARRY_FORWARD_FROM_V1_4_HISTORY,Correction logged in May 18 v1.4 history.
+IBGE organizacao_do_territorio,Treat as repository; prefer specific IBGE products such as Malha Municipal.,DATA_SOURCE_TREATMENT_NOTE,Do not treat parent FTP folder as one dataset unless repository-level entry is needed.
+Pronaf,Treat as policy/program unless specifically using Pronaf credit operations data panel.,DATA_SOURCE_TREATMENT_NOTE,Only data panel should be a C1 data source.
+EMPAER-MT,Treat as institutional source/provider unless tied to a specific publication/map/dataset/service.,DATA_SOURCE_TREATMENT_NOTE,Not a dataset by itself.

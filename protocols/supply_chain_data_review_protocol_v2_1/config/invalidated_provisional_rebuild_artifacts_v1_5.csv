@@ -1,0 +1,11 @@
+artifact_name,status,reason
+DCF_PRISMA_S_protocol_rebuild_2026-05-27.xlsx,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+DCF_PRISMA_S_term_matrix.csv,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+DCF_PRISMA_S_term_summaries.csv,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+DCF_PRISMA_S_zero_reference_terms.csv,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+DCF_PRISMA_S_document_term_counts.csv,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+DCF_PRISMA_S_Figure_1_jurisdictional_terms.svg,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+DCF_PRISMA_S_Figure_2_supply_chain_terms.svg,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+DCF_PRISMA_S_Figure_3_farm_level_terms.svg,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+DCF_PRISMA_S_protocol_rebuild_E1_context_2026-05-27.xlsx,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
+E1_corpus_dataset_hits.csv,SUPERSEDED_DO_NOT_USE,Generated before validated v1.5 corpus state and/or before strict v1.3 protocol rerun; term counts were not protocol-valid.
