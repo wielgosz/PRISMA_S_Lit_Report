@@ -3,9 +3,6 @@
 This update package adds the **Supply Chain Data Review Protocol v2.1** and the
 **Supply Chain Data Review Desktop Runner v2.2-alpha** for Windows desktop use.
 
-The package is intended to be copied into the repository:
-
-<https://github.com/wielgosz/PRISMA_S_Lit_Report>
 
 ## Contents
 
