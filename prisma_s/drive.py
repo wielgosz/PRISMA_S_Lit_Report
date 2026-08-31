@@ -21,7 +21,7 @@ list_folder_files(service, folder_id)
     Return file metadata for all PDFs and DOCX files in the folder.
 
 download_folder(folder_id, credentials_path, token_path)
-    Full pipeline: authenticate → list → download → return local paths.
+    Full pipeline: authenticate -> list -> download -> return local paths.
 """
 
 from __future__ import annotations
@@ -92,7 +92,7 @@ def _authenticate(credentials_path: str | Path, token_path: str | Path):
                 str(credentials_path), SCOPES
             )
             creds = flow.run_local_server(port=0)
-        with open(token_path, "w") as fh:
+        with open(token_path, "w", encoding="utf-8") as fh:
             fh.write(creds.to_json())
 
     return creds

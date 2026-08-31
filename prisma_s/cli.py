@@ -5,7 +5,7 @@ Two subcommands are available:
 
   prisma-s wizard
       Interactive guided setup.  Prompts for search terms, source location,
-      batch ID, and output folder — then runs the analysis.  Best for first
+      batch ID, and output folder, then runs the analysis.  Best for first
       use or when running from a terminal.
 
   prisma-s run  [options]
@@ -17,15 +17,15 @@ Examples
 # Guided interactive mode (recommended for new users)
 prisma-s wizard
 
-# Non-interactive — local folder
+# Non-interactive - local folder
 prisma-s run --batch batch_01 --output results/batch_01.xlsx --input /path/to/docs
 
-# Non-interactive — Google Drive (URL or folder ID both accepted)
+# Non-interactive - Google Drive (URL or folder ID both accepted)
 prisma-s run --batch batch_01 --output results/batch_01.xlsx \\
     --drive-folder "https://drive.google.com/drive/folders/1Abc123XYZ" \\
     --drive-credentials credentials.json
 
-# Non-interactive — custom keyword dictionary
+# Non-interactive - custom keyword dictionary
 prisma-s run --batch batch_01 --output results/batch_01.xlsx \\
     --input /path/to/docs --keywords /path/to/keyword_dictionary_v1.2.csv
 """
@@ -36,14 +36,16 @@ import argparse
 import sys
 
 from . import __version__
+from ._console import enable_utf8_console
 from .runner import run_analysis
 
 
 def main() -> None:
+    enable_utf8_console()
     parser = argparse.ArgumentParser(
         prog="prisma-s",
         description=(
-            "PRISMA-S keyword corpus analysis — "
+            "PRISMA-S keyword corpus analysis - "
             "reproducible keyword searching on PDFs and Word documents."
         ),
     )
@@ -57,7 +59,7 @@ def main() -> None:
     sub.add_parser(
         "wizard",
         help=(
-            "Interactive setup wizard — prompts for search terms, source "
+            "Interactive setup wizard - prompts for search terms, source "
             "location, batch ID, and output folder, then runs the analysis."
         ),
     )
@@ -97,7 +99,7 @@ def main() -> None:
              "Defaults to the bundled keyword_dictionary_v1.1.csv."
     )
 
-    # Also accept --drive-folder as a URL — parse out the folder ID
+    # Also accept --drive-folder as a URL - parse out the folder ID
     from .drive import parse_folder_id
 
     args = parser.parse_args()
@@ -120,7 +122,7 @@ def main() -> None:
                 drive_token=args.drive_token,
                 keyword_csv=args.keywords,
             )
-            print(f"Done — {len(df):,} rows written to {args.output}")
+            print(f"Done - {len(df):,} rows written to {args.output}")
         except Exception as exc:
             print(f"Error: {exc}", file=sys.stderr)
             sys.exit(1)

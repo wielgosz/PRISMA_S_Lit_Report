@@ -117,7 +117,7 @@ def run_analysis(
         try:
             full, first, md = extract_text(fp)
         except Exception as exc:
-            print(f"WARNING: skipping {fp.name} — {exc}")
+            print(f"WARNING: skipping {fp.name} - {exc}")
             continue
 
         title = guess_title(md, first)
@@ -154,9 +154,9 @@ def run_analysis(
         n_terms=len(term_index),
     )
 
-    # --- Write output — two sheets -------------------------------------------
-    # Sheet 1: Long_AllTerms  — the full document × term matrix
-    # Sheet 2: PRISMA-S_Compliance — 16-item checklist status
+    # --- Write output - two sheets -----------------------------------------
+    # Sheet 1: Long_AllTerms  - the full document x term matrix
+    # Sheet 2: PRISMA-S_Compliance - 16-item checklist status
     df = pd.DataFrame(rows)
     output_xlsx = Path(output_xlsx)
     output_xlsx.parent.mkdir(parents=True, exist_ok=True)
@@ -165,7 +165,7 @@ def run_analysis(
         df.to_excel(writer, index=False, sheet_name="Long_AllTerms")
         compliance_df.to_excel(writer, index=False, sheet_name="PRISMA-S_Compliance")
 
-    print(f"Wrote {len(df):,} rows → {output_xlsx}")
+    print(f"Wrote {len(df):,} rows -> {output_xlsx}")
     print(f"  Sheet 1: Long_AllTerms  ({len(df):,} rows)")
     print(f"  Sheet 2: PRISMA-S_Compliance  ({len(compliance_df)} items)")
 

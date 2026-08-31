@@ -4,17 +4,17 @@ Interactive setup wizard for prisma-s.
 Running ``prisma-s wizard`` (or calling ``run_wizard()`` from Python) walks
 the user through four configuration steps on the command line:
 
-    Step 1 — Search terms
+    Step 1 - Search terms
         Choose the bundled keyword dictionary, enter terms manually, or
         point to a custom CSV file.
 
-    Step 2 — Source location
+    Step 2 - Source location
         Paste a Google Drive folder URL / ID  OR  enter a local folder path.
 
-    Step 3 — Batch identifier
+    Step 3 - Batch identifier
         A short label written into every output row (e.g. "batch_01").
 
-    Step 4 — Output location
+    Step 4 - Output location
         Enter a local folder path where the .xlsx will be written.
         (Google Drive output is not yet supported; upload manually after the run.)
 
@@ -29,7 +29,7 @@ Design notes
   "Custom") so the output Group column remains consistent.
 - A temporary in-memory CSV is built when the user enters terms manually,
   meaning keyword loading still flows through the standard ``keywords.py``
-  path — no special-case code in the runner.
+  path - no special-case code in the runner.
 """
 
 from __future__ import annotations
@@ -41,6 +41,7 @@ import re
 import tempfile
 from pathlib import Path
 
+from ._console import enable_utf8_console
 from .drive import parse_folder_id
 from .keywords import BUNDLED_VERSION, bundled_dict_path
 
@@ -63,7 +64,7 @@ def _prompt(message: str, default: str = "") -> str:
     return raw
 
 
-def _hr(char: str = "─", width: int = 60) -> None:
+def _hr(char: str = "-", width: int = 60) -> None:
     """Print a horizontal rule."""
     print(char * width)
 
@@ -88,7 +89,7 @@ def _step_terms() -> tuple[Path, str]:
     kw_version : str
         Version string to display (may be 'custom').
     """
-    _header("Step 1 of 4 — Search Terms")
+    _header("Step 1 of 4 - Search Terms")
     print(
         "  How would you like to specify the search terms?\n"
         "\n"
@@ -116,10 +117,10 @@ def _step_terms() -> tuple[Path, str]:
                 version = m.group(1) if m else "custom"
                 print(f"\n  Loaded: {csv_path.name}")
                 return csv_path, version
-            print(f"  File not found: {csv_path}  — please try again.")
+            print(f"  File not found: {csv_path}  - please try again.")
 
     else:
-        print("  Unrecognised choice — using bundled dictionary.")
+        print("  Unrecognised choice - using bundled dictionary.")
         return bundled_dict_path(), BUNDLED_VERSION
 
 
@@ -146,7 +147,7 @@ def _enter_terms_manually() -> tuple[Path, str]:
         term = input(f"  Term {len(terms) + 1} (blank to finish): ").strip()
         if not term:
             if not terms:
-                print("  No terms entered — using bundled dictionary.")
+                print("  No terms entered - using bundled dictionary.")
                 return bundled_dict_path(), BUNDLED_VERSION
             break
         terms.append(term)
@@ -181,7 +182,7 @@ def _step_source() -> tuple[str | None, str | None, str | None]:
     drive_credentials : str or None
         Path to credentials.json (None if local is used).
     """
-    _header("Step 2 of 4 — Source Location")
+    _header("Step 2 of 4 - Source Location")
     print(
         "  Where are the documents to be searched?\n"
         "\n"
@@ -201,7 +202,7 @@ def _step_source() -> tuple[str | None, str | None, str | None]:
             print(
                 f"\n  WARNING: credentials file not found at '{creds}'.\n"
                 "  The run will fail unless this file exists at runtime.\n"
-                "  See README.md → 'Google Drive setup' for instructions.\n"
+                "  See README.md -> 'Google Drive setup' for instructions.\n"
             )
         return None, folder_id, creds
 
@@ -211,12 +212,12 @@ def _step_source() -> tuple[str | None, str | None, str | None]:
             p = Path(path_str)
             if p.exists():
                 return str(p), None, None
-            print(f"  Path not found: {p}  — please try again.")
+            print(f"  Path not found: {p}  - please try again.")
 
 
 def _step_batch() -> str:
     """Prompt the user for a batch identifier."""
-    _header("Step 3 of 4 — Batch Identifier")
+    _header("Step 3 of 4 - Batch Identifier")
     print(
         "  The batch ID is written into every output row so multiple runs\n"
         "  can be combined and distinguished in analysis.\n"
@@ -227,7 +228,7 @@ def _step_batch() -> str:
 
 def _step_output() -> str:
     """Prompt the user for the output folder path."""
-    _header("Step 4 of 4 — Output Location")
+    _header("Step 4 of 4 - Output Location")
     print(
         "  Enter a local folder path where the Excel results file will be written.\n"
         "  The folder will be created if it does not exist.\n"
@@ -247,10 +248,11 @@ def run_wizard() -> None:
     It can also be imported and called directly from a Python script for a
     guided interactive session.
     """
-    print("\n" + "═" * 60)
-    print("  PRISMA-S Keyword Corpus Analysis — Interactive Wizard")
+    enable_utf8_console()
+    print("\n" + "=" * 60)
+    print("  PRISMA-S Keyword Corpus Analysis - Interactive Wizard")
     print("  https://www.prisma-statement.org/prisma-search")
-    print("═" * 60)
+    print("=" * 60)
     print(
         "\n  This wizard will guide you through configuring a keyword\n"
         "  search of your document corpus according to PRISMA-S\n"
