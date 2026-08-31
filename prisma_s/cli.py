@@ -27,7 +27,7 @@ prisma-s run --batch batch_01 --output results/batch_01.xlsx \\
 
 # Non-interactive — custom keyword dictionary
 prisma-s run --batch batch_01 --output results/batch_01.xlsx \\
-    --input /path/to/docs --keywords keywords/keyword_dictionary_v1.2.csv
+    --input /path/to/docs --keywords /path/to/keyword_dictionary_v1.2.csv
 """
 
 from __future__ import annotations

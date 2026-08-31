@@ -50,4 +50,4 @@ where = ["."]
 include = ["prisma_s*"]
 
 [tool.setuptools.package-data]
-"*" = ["keywords/*.csv", "protocol/*.md"]
+"prisma_s" = ["data/*.csv", "data/*.md"]

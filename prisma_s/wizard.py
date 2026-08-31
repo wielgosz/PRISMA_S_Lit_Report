@@ -42,7 +42,7 @@ import tempfile
 from pathlib import Path
 
 from .drive import parse_folder_id
-from .keywords import BUNDLED_DICT_NAME, BUNDLED_VERSION, _KEYWORDS_DIR
+from .keywords import BUNDLED_VERSION, bundled_dict_path
 
 
 # ---------------------------------------------------------------------------
@@ -100,7 +100,7 @@ def _step_terms() -> tuple[Path, str]:
     choice = _prompt("Choice", default="1")
 
     if choice == "1":
-        csv_path = _KEYWORDS_DIR / BUNDLED_DICT_NAME
+        csv_path = bundled_dict_path()
         print(f"\n  Using bundled dictionary: {csv_path.name}")
         return csv_path, BUNDLED_VERSION
 
@@ -120,13 +120,13 @@ def _step_terms() -> tuple[Path, str]:
 
     else:
         print("  Unrecognised choice — using bundled dictionary.")
-        return _KEYWORDS_DIR / BUNDLED_DICT_NAME, BUNDLED_VERSION
+        return bundled_dict_path(), BUNDLED_VERSION
 
 
 def _count_bundled_terms() -> int:
     """Return the number of terms in the bundled dictionary."""
     try:
-        with open(_KEYWORDS_DIR / BUNDLED_DICT_NAME, newline="", encoding="utf-8") as f:
+        with open(bundled_dict_path(), newline="", encoding="utf-8") as f:
             return sum(1 for row in csv.DictReader(f) if row.get("term", "").strip())
     except Exception:
         return 0
@@ -147,7 +147,7 @@ def _enter_terms_manually() -> tuple[Path, str]:
         if not term:
             if not terms:
                 print("  No terms entered — using bundled dictionary.")
-                return _KEYWORDS_DIR / BUNDLED_DICT_NAME, BUNDLED_VERSION
+                return bundled_dict_path(), BUNDLED_VERSION
             break
         terms.append(term)
 
