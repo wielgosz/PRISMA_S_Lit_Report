@@ -1,93 +1,104 @@
-# PRISMA-S / Supply Chain Data Review Protocol Update
+# PRISMA-S Lit Review
 
-This update package adds the **Supply Chain Data Review Protocol v2.1** and the
-**Supply Chain Data Review Desktop Runner v2.2-alpha** for Windows desktop use.
+A transparent, reproducible Python package (`prisma_s`, distributed as
+`prisma-s-lit-review`) for **PRISMA-S-aligned keyword corpus analysis** of
+PDF/DOCX literature. Point it at a local folder or a Google Drive folder and get
+an auditable, long-format Excel matrix of term counts plus a PRISMA-S compliance
+sheet. Every output row is stamped with the protocol version, keyword-dictionary
+version, run timestamp, and source reference so a run can be replicated exactly.
 
+Aligned to PRISMA 2020 / PRISMA-S (Rethlefsen et al. 2021,
+<https://doi.org/10.1186/s13643-020-01542-z>).
 
-## Contents
+## Install
 
-```text
-protocols/
-  v2_1/
-    README.md
-    CHANGELOG.md
-    MANIFEST.yml
-    config/
-    docs/
-    scripts/
-    schemas/
-    outputs/v2_1_reference_outputs/
+Python 3.9+ required. From the repository root:
 
-desktop_runner/
-  runner/
-    README.md
-    app.py
-    build_windows.bat
-    templates/Supply_Chain_Data_Review_Input_Template_v2_2.xlsx
-    protocol_engine/
-    protocol_v2_1/
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1   # Windows
 ```
 
-## Protocol v2.1 summary
+```bash
+./install.sh                                            # macOS / Linux
+```
+
+This creates a private virtual environment and installs the `prisma-s` command.
+Manual install and troubleshooting (including the Windows *"Filename too long"*
+clone error and broken-Python venv failures) are covered in [INSTALL.md](INSTALL.md).
+
+## Use
+
+Guided, interactive:
+
+```
+prisma-s wizard
+```
+
+Non-interactive:
+
+```
+# Local folder, bundled keyword dictionary
+prisma-s run --batch batch_01 --input /path/to/docs --output results/batch_01.xlsx
+
+# Custom keyword dictionary (CSV with group,term columns; save as UTF-8)
+prisma-s run --batch batch_01 --input /path/to/docs --output results/batch_01.xlsx \
+    --keywords /path/to/keyword_dictionary_v1.2.csv
+
+# Google Drive folder (URL or bare ID); needs credentials.json
+prisma-s run --batch batch_01 --output results/batch_01.xlsx \
+    --drive-folder "https://drive.google.com/drive/folders/1Abc123XYZ" \
+    --drive-credentials credentials.json
+```
+
+The bundled keyword dictionary ships inside the package
+(`prisma_s/data/keyword_dictionary_v1.1.csv`), so `--keywords` is optional.
+
+Output workbook: sheet `Long_AllTerms` (one row per document x term, zero counts
+included) and sheet `PRISMA-S_Compliance` (16-item checklist status).
+
+## Package layout
+
+```text
+prisma_s/
+  keywords.py     versioned keyword-dictionary loader (bundled dict in data/)
+  extract.py      PDF (PyMuPDF -> PyPDF2 fallback) and DOCX text extraction
+  search.py       case-insensitive, word-boundary regex matching engine
+  drive.py        Google Drive folder ingestion
+  compliance.py   PRISMA-S 16-item compliance report builder
+  runner.py       run_analysis() orchestrator
+  wizard.py       interactive CLI setup wizard
+  cli.py          argparse entry point (the prisma-s command)
+  data/           bundled keyword dictionary + locked protocol spec
+```
+
+Method decisions and conventions are recorded in
+[CLAUDE.md](CLAUDE.md); full version history in [CHANGELOG.md](CHANGELOG.md).
+
+---
+
+## Supply Chain Data Review Protocol v2.1 / Desktop Runner v2.2-alpha
+
+The `protocols/v2_1/` and `desktop_runner/runner/` trees hold a separate
+deliverable: the **Supply Chain Data Review Protocol v2.1** and a Tkinter +
+PyInstaller Windows desktop runner that uses it as a backend engine. These are
+not part of the `prisma_s` package and are not installed by `pip`.
 
 Protocol v2.1 consolidates the May 2026 revisions to the Supply Chain Data
-Review workflow:
+Review workflow: the v1.3 exact keyword-counting rule, the frozen extracted-text
+workflow, the v1.4 dataset-reference crosswalk workflow, a v1.3-style tabular
+reference workbook, canonical SVG figures keyed on `reports_referencing`, and APA
+references for the RTRS and ECF corpus additions.
 
-- v1.3 exact keyword-counting rule retained: exact, case-insensitive regex
-  matching with alphanumeric boundaries; variants rolled up to canonical terms.
-- Frozen extracted-text workflow retained for reproducible keyword counts.
-- v1.4 dataset-reference extraction / canonicalization / crosswalk workflow
-  retained.
-- v2.1 output revisions added:
-  - v1.3-style tabular reference workbook;
-  - canonical SVG outputs only;
-  - SVG figures use `reports_referencing` rather than raw occurrence totals;
-  - Figure 1 excludes AOI terms and is limited to jurisdictional / landscape
-    terms;
-  - APA references added for the RTRS and ECF corpus additions.
+The desktop runner lives under `desktop_runner/runner/`; its editable input
+workbook is `desktop_runner/runner/templates/Supply_Chain_Data_Review_Input_Template_v2_2.xlsx`
+(sheets: `README`, `A1_Organizations`, `B1_Corpus_Documents`, `Dictionary`,
+`Run_Settings`, `Exclusions_Duplicates`, `New_Documents`, `Validation_Log`). It
+lets the user pick an input workbook, a folder of PDFs / batch ZIPs, and an
+output folder, then validates the workbook and runs the protocol to produce a
+date-stamped folder of Excel, SVG, CSV, QA, frozen-text, log, and manifest
+outputs.
 
-## Desktop Runner v2.2-alpha availability
-
-The desktop runner is available under:
-
-```text
-desktop_runner/runner/
-```
-
-It is a Tkinter + PyInstaller `onedir` runner that uses the v2.1 protocol
-package as its backend engine and an Excel input workbook as the editable source
-of truth.
-
-The editable input workbook is:
-
-```text
-desktop_runner/runner/templates/Supply_Chain_Data_Review_Input_Template_v2_2.xlsx
-```
-
-The input workbook contains:
-
-- `README`
-- `A1_Organizations`
-- `B1_Corpus_Documents`
-- `Dictionary`
-- `Run_Settings`
-- `Exclusions_Duplicates`
-- `New_Documents`
-- `Validation_Log`
-
-The runner allows users to select:
-
-1. the Excel input workbook;
-2. a folder containing PDFs and/or batch ZIPs;
-3. an output folder.
-
-It then validates the workbook and can run the protocol to generate a
-date-stamped output folder with Excel, SVG, CSV, QA, frozen-text, log, and
-manifest outputs.
-
-## Build the Windows desktop runner
-
-On a Windows machine with Python installed:
+Build the Windows desktop runner on a machine with Python installed:
 
 ```bat
 cd desktop_runner\runner
@@ -95,24 +106,4 @@ python -m pip install -r requirements.txt
 build_windows.bat
 ```
 
-The PyInstaller `onedir` executable folder will be created under:
-
-```text
-dist\SupplyChainDataReviewRunner\
-```
-
-## Suggested repository commit message
-
-```text
-Add Supply Chain Data Review Protocol v2.1 and Desktop Runner v2.2-alpha
-
-Includes:
-- protocol v2.1 engine and reference outputs
-- frozen-text keyword workflow with v1.3 matching rule
-- v1.4 dataset crosswalk workflow
-- v1.3-style tabular reference workbook
-- corrected canonical SVG figure contract
-- APA updates for RTRS and ECF corpus additions
-- Tkinter/PyInstaller Windows desktop runner alpha
-- Excel input template as editable source of truth
-```
+The PyInstaller `onedir` folder is written to `dist\SupplyChainDataReviewRunner\`.

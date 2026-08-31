@@ -37,7 +37,7 @@ Additional context docs:
 - `docs/CLAUDE_PROJECT_CONTEXT.md` — short task-oriented context stub
 - `docs/project_context_summary.md` — project goal / method-decision summary
 - `CHANGELOG.md` — full version history (currently v1.2.0)
-- `protocol/PRISMA_keyword_protocol_v1.1.md` — locked protocol spec
+- `prisma_s/data/PRISMA_keyword_protocol_v1.1.md` — locked protocol spec
 
 ## Working conventions
 

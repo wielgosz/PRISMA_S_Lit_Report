@@ -1,0 +1,5 @@
+# Keep shell scripts LF so install.sh runs on macOS/Linux regardless of the
+# committer's core.autocrlf setting. Windows-only scripts stay CRLF.
+*.sh    text eol=lf
+*.ps1   text eol=crlf
+*.bat   text eol=crlf

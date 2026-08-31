@@ -1,4 +1,4 @@
-# Google Drive OAuth credentials — never commit these
+# Google Drive OAuth credentials - never commit these
 credentials.json
 token.json
 
@@ -28,6 +28,10 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Data outputs (large files — commit selectively)
-data/
-results/
+# Data outputs (large files - commit selectively)
+/data/
+/results/
+
+# Desktop runner build artifacts
+desktop_runner/**/dist/
+desktop_runner/**/build/
