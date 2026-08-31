@@ -93,7 +93,7 @@ def run_desktop_protocol(
         "--input-root", str(pdf_folder),
         "--out-root", str(run_root / "protocol_outputs"),
         "--historical-v13", str(runtime_baseline),
-        "--template", "examples/current_milestone/figure_template_guided_data_review_2026-05-26_v2_0_source.xlsx",
+        "--template", "examples/milestone/figure_template_v2_0.xlsx",
         "--dictionary", "config/keyword_dictionary_v1_3.csv",
     ]
     _log("Running protocol backend...", log_callback)

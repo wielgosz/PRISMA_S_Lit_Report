@@ -11,11 +11,11 @@ cd PRISMA_S_Lit_Report
 git status
 
 # Optional: run lightweight checks where Python dependencies are available.
-python -m py_compile desktop_runner/Supply_Chain_Data_Review_Runner_v2_2_alpha/app.py
-python -m py_compile desktop_runner/Supply_Chain_Data_Review_Runner_v2_2_alpha/protocol_engine/run_protocol.py
+python -m py_compile desktop_runner/runner/app.py
+python -m py_compile desktop_runner/runner/protocol_engine/run_protocol.py
 
 # Commit
-git add protocols/supply_chain_data_review_protocol_v2_1 desktop_runner/Supply_Chain_Data_Review_Runner_v2_2_alpha README.md
+git add protocols/v2_1 desktop_runner/runner README.md
 git commit -m "Add Supply Chain Data Review Protocol v2.1 and Desktop Runner v2.2-alpha"
 
 git push origin main

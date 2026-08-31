@@ -2,7 +2,7 @@
 
 This package is designed to be committed to GitHub without raw PDFs. Store large source PDFs in an external artifact store or local `data/raw_pdfs/` folder excluded by `.gitignore`.
 
-To reproduce the milestone exactly, use the reference outputs under `outputs/reference_milestone/`. To rerun from source, provide the raw PDFs or extracted text corresponding to `examples/current_milestone/vetted_corpus_metadata_2026-05-13.csv`.
+To reproduce the milestone exactly, use the reference outputs under `outputs/reference_milestone/`. To rerun from source, provide the raw PDFs or extracted text corresponding to `examples/milestone/vetted_corpus_metadata_2026-05-13.csv`.
 
 Recommended branch workflow:
 

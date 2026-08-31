@@ -51,7 +51,7 @@ This file defines extraction timeouts, retry behavior, blocking QA statuses, cha
 
 ```bash
 python scripts/freeze_extract_text_corpus.py \
-  --corpus examples/current_milestone/vetted_corpus_metadata_2026-05-13.csv \
+  --corpus examples/milestone/vetted_corpus_metadata_2026-05-13.csv \
   --pdf-root data/raw_pdfs \
   --out-root data/frozen_text/v1_5 \
   --params config/frozen_text_protocol_params_v1_5.yml
@@ -64,7 +64,7 @@ python scripts/validate_frozen_corpus.py \
   --params config/frozen_text_protocol_params_v1_5.yml
 
 python scripts/preflight_protocol_gate.py \
-  --corpus examples/current_milestone/vetted_corpus_metadata_2026-05-13.csv \
+  --corpus examples/milestone/vetted_corpus_metadata_2026-05-13.csv \
   --manifest data/frozen_text/v1_5/frozen_text_manifest.csv \
   --dictionary config/keyword_dictionary_v1_3.csv \
   --qa-report outputs/v15_validation/frozen_text_qa_report.csv \

@@ -8,7 +8,7 @@ This update package adds the **Supply Chain Data Review Protocol v2.1** and the
 
 ```text
 protocols/
-  supply_chain_data_review_protocol_v2_1/
+  v2_1/
     README.md
     CHANGELOG.md
     MANIFEST.yml
@@ -19,7 +19,7 @@ protocols/
     outputs/v2_1_reference_outputs/
 
 desktop_runner/
-  Supply_Chain_Data_Review_Runner_v2_2_alpha/
+  runner/
     README.md
     app.py
     build_windows.bat
@@ -51,7 +51,7 @@ Review workflow:
 The desktop runner is available under:
 
 ```text
-desktop_runner/Supply_Chain_Data_Review_Runner_v2_2_alpha/
+desktop_runner/runner/
 ```
 
 It is a Tkinter + PyInstaller `onedir` runner that uses the v2.1 protocol
@@ -61,7 +61,7 @@ of truth.
 The editable input workbook is:
 
 ```text
-desktop_runner/Supply_Chain_Data_Review_Runner_v2_2_alpha/templates/Supply_Chain_Data_Review_Input_Template_v2_2.xlsx
+desktop_runner/runner/templates/Supply_Chain_Data_Review_Input_Template_v2_2.xlsx
 ```
 
 The input workbook contains:
@@ -90,7 +90,7 @@ manifest outputs.
 On a Windows machine with Python installed:
 
 ```bat
-cd desktop_runner\Supply_Chain_Data_Review_Runner_v2_2_alpha
+cd desktop_runner\runner
 python -m pip install -r requirements.txt
 build_windows.bat
 ```
