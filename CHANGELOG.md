@@ -7,6 +7,23 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.3.0] - 2026-08-31
+
+### Fixed
+- `prisma-s run` with no `--keywords` no longer crashes with `No such file or directory: .../keywords/keyword_dictionary_v1.1.csv`. The bundled dictionary and the locked protocol spec now ship inside the package at `prisma_s/data/` and are resolved with `importlib.resources`.
+- Console output is forced to UTF-8 at CLI start-up, fixing `'charmap' codec can't encode character` on legacy Windows code pages (the `->` in the run summary, the wizard's rule characters) and making accented keyword dictionaries (Portuguese, Spanish) safe to print.
+- `git clone` on Windows no longer fails with "Filename too long": paths under `desktop_runner/` and `protocols/` were shortened (longest 161 -> 106 chars) and the redundant 11 MB `archive_zips/` was removed.
+
+### Added
+- `install.ps1` / `install.sh` - locate a usable Python (skipping broken embedded interpreters), build a virtual environment at a short stable path, and install the package.
+- `INSTALL.md` with install and troubleshooting guidance; `.gitattributes` pinning shell-script line endings.
+
+### Changed
+- Package version unified at 1.3.0 and sourced from `prisma_s.__version__` via `[tool.setuptools.dynamic]` (was `pyproject` 1.1.0 vs package 1.2.0).
+- `README.md` now leads with the installable package; the Supply Chain Data Review Protocol / Desktop Runner material moved to a separate section.
+
+---
+
 ## [1.2.0] — 2026-03-17
 
 ### Added

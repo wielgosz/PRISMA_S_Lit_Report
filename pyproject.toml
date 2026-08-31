@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "prisma-s-lit-review"
-version = "1.1.0"
+dynamic = ["version"]
 description = "PRISMA-S aligned keyword corpus analysis for systematic literature reviews"
 readme = "README.md"
 license = { text = "MIT" }
@@ -44,6 +44,14 @@ prisma-s = "prisma_s.cli:main"
 [project.urls]
 Homepage = "https://github.com/wielgosz/PRISMA_S_Lit_Report"
 "Bug Tracker" = "https://github.com/wielgosz/PRISMA_S_Lit_Report/issues"
+
+[tool.pytest.ini_options]
+# Only collect this package's tests; the desktop_runner/ and protocols/
+# bundles ship their own test files with colliding basenames.
+testpaths = ["tests"]
+
+[tool.setuptools.dynamic]
+version = { attr = "prisma_s.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["."]
