@@ -6,7 +6,7 @@ can resolve it by static analysis without importing the package (which would
 pull in pandas at build time).
 """
 
-__version__ = "1.4.0"
+__version__ = "1.5.0"
 
 # Version of the locked keyword-matching protocol spec shipped in
 # ``prisma_s/data/PRISMA_keyword_protocol_v*.md``.  Stamped into every output row.
