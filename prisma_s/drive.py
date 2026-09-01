@@ -85,14 +85,21 @@ def _authenticate(credentials_path: str | Path, token_path: str | Path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
 
     if not creds or not creds.valid:
+        refreshed = False
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+                refreshed = True
+            except Exception as exc:  # revoked / offline -> fall back to consent
+                print(f"Drive token refresh failed ({exc}); re-authenticating.")
+        if not refreshed:
             flow = InstalledAppFlow.from_client_secrets_file(
                 str(credentials_path), SCOPES
             )
             creds = flow.run_local_server(port=0)
-        with open(token_path, "w", encoding="utf-8") as fh:
+        # token.json holds a refresh token; keep it owner-readable only.
+        fd = os.open(token_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(creds.to_json())
 
     return creds

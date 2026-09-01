@@ -90,7 +90,7 @@ PRISMA_S_ITEMS: list[PrismaSItem] = [
         scope_note=(
             "In a corpus analysis the 'database' is the folder of collected documents. "
             "The source reference (local path or Google Drive folder ID) is recorded in "
-            "every output row and in the run metadata sheet."
+            "every output row and in the Run_Metadata sheet."
         ),
         default_status="PARTIAL",
     ),
@@ -283,9 +283,9 @@ PRISMA_S_ITEMS: list[PrismaSItem] = [
             "Report whether searches were conducted in languages other than English."
         ),
         scope_note=(
-            "The current keyword dictionary (v1.1) contains English-only terms. "
-            "The regex engine is Unicode-safe and can match non-ASCII terms if "
-            "a multi-lingual keyword dictionary is supplied.  Document language "
+            "The regex engine is Unicode-safe and matches non-ASCII terms when a "
+            "multi-lingual keyword dictionary is supplied.  The dictionary used "
+            "for this run is named in the Runtime Notes; document its language "
             "scope in the keyword dictionary version notes."
         ),
         default_status="PARTIAL",
@@ -298,9 +298,10 @@ PRISMA_S_ITEMS: list[PrismaSItem] = [
             "or source."
         ),
         scope_note=(
-            "The run metadata sheet records total documents processed and total "
-            "non-zero term matches per document, satisfying this item for "
-            "corpus-analysis purposes."
+            "The Run_Metadata sheet records total documents processed and the "
+            "pages / words / characters extracted per document; the "
+            "Long_AllTerms sheet records every term count, satisfying this item "
+            "for corpus-analysis purposes."
         ),
         default_status="APPLIED",
     ),
@@ -365,7 +366,8 @@ def build_compliance_report(
             f"{n_terms} terms searched."
         ),
         8: f"{n_documents} documents processed; each processed once.",
-        16: f"{n_documents} documents in corpus; {n_terms} terms applied.",
+        15: f"Keyword dictionary version for this run: v{keyword_dict_version}.",
+        16: f"{n_documents} documents processed; {n_terms} terms applied.",
     }
 
     rows = []
