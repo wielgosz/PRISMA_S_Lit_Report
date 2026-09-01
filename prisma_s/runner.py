@@ -87,6 +87,8 @@ def run_analysis(
     drive_token: str | Path = "token.json",
     keyword_csv: str | Path | None = None,
     emit_citation: bool = True,
+    enable_ocr: bool = True,
+    ocr_lang: str = "eng",
 ) -> pd.DataFrame:
     """Run a PRISMA-S keyword corpus analysis and write results to Excel.
 
@@ -106,6 +108,11 @@ def run_analysis(
         Path to a keyword dictionary CSV.  Defaults to the bundled one.
     emit_citation:
         When true, print the trilingual "How to cite" block after the run.
+    enable_ocr:
+        When true (default), a PDF still textless after the PDF libraries is
+        OCR'd - but only if Tesseract is installed. Set false to skip OCR.
+    ocr_lang:
+        Tesseract language code(s) for the OCR rung, e.g. "eng" or "eng+por".
 
     Returns
     -------
@@ -159,7 +166,7 @@ def run_analysis(
 
         for fp in file_paths:
             try:
-                res = extract_text(fp)
+                res = extract_text(fp, enable_ocr=enable_ocr, ocr_lang=ocr_lang)
             except Exception as exc:
                 print(f"WARNING: skipping {fp.name} - {exc}")
                 doc_meta.append(
@@ -169,6 +176,7 @@ def run_analysis(
                         "Pages": pd.NA,
                         "Words": 0,
                         "Chars": 0,
+                        "Escalated": False,
                         "Status": f"skipped: {exc}",
                     }
                 )
@@ -177,6 +185,12 @@ def run_analysis(
             title = guess_title(res.metadata, res.first_text)
             year = guess_year(res.metadata, res.first_text)
             words = len(res.full_text.split())
+            if not res.full_text.strip():
+                status = "ok: no text extracted"
+            elif res.escalated:
+                status = f"ok (escalated: {res.chain})"
+            else:
+                status = "ok"
             doc_meta.append(
                 {
                     "Document Name": fp.name,
@@ -184,7 +198,8 @@ def run_analysis(
                     "Pages": res.pages if res.pages is not None else pd.NA,
                     "Words": words,
                     "Chars": len(res.full_text),
-                    "Status": "ok" if res.full_text.strip() else "ok: no text extracted",
+                    "Escalated": bool(res.escalated),
+                    "Status": status,
                 }
             )
 
@@ -221,10 +236,24 @@ def run_analysis(
         )
 
     meta_df = pd.DataFrame(
-        doc_meta, columns=["Document Name", "Backend", "Pages", "Words", "Chars", "Status"]
+        doc_meta,
+        columns=["Document Name", "Backend", "Pages", "Words", "Chars", "Escalated", "Status"],
     )
     if not meta_df.empty:
         meta_df["Pages"] = meta_df["Pages"].astype("Int64")
+
+    backend_counts: dict[str, int] = {}
+    for m in doc_meta:
+        backend_counts[m["Backend"] or "(skipped)"] = (
+            backend_counts.get(m["Backend"] or "(skipped)", 0) + 1
+        )
+    escalated_docs = [m["Document Name"] for m in doc_meta if m.get("Escalated")]
+    textless_docs = [
+        m["Document Name"] for m in doc_meta if m["Status"] == "ok: no text extracted"
+    ]
+    from .extract import _ocr_available
+
+    ocr_ready = enable_ocr and _ocr_available()
 
     run_summary = {
         "batch": batch_id,
@@ -237,6 +266,11 @@ def run_analysis(
         "documents_processed": n_processed,
         "documents_skipped": n_skipped,
         "result_rows": len(df),
+        "backend_counts": backend_counts,
+        "escalated_documents": escalated_docs,
+        "textless_documents": textless_docs,
+        "ocr_enabled": bool(enable_ocr),
+        "ocr_available": bool(ocr_ready),
         "documents": doc_meta_jsonable(doc_meta),
     }
 
@@ -279,6 +313,22 @@ def run_analysis(
         f"  Documents: {n_processed} processed, {n_skipped} skipped "
         f"of {n_attempted} discovered"
     )
+    print(f"  Extraction backends: {backend_counts}")
+    if escalated_docs:
+        print(f"  Escalated to a heavier extractor: {len(escalated_docs)} document(s)")
+    if textless_docs:
+        if not enable_ocr:
+            why = "OCR disabled (--no-ocr)"
+        elif not ocr_ready:
+            why = "OCR unavailable - install Tesseract to attempt it"
+        else:
+            why = "OCR ran but recovered nothing"
+        print(
+            f"  No text layer ({len(textless_docs)} document(s)) - {why}; "
+            "these need OCR'd or text-based source files:"
+        )
+        for name in textless_docs:
+            print(f"    - {name}")
     if n_skipped:
         warnings.warn(
             f"{n_skipped} document(s) could not be processed; see the Run_Metadata "

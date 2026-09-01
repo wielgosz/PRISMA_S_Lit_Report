@@ -36,6 +36,9 @@ dependencies = [
 # Higher-fidelity PDF text extraction. PyMuPDF is AGPL-3.0; keeping it optional
 # lets the default install stay MIT-compatible. `extract.py` falls back to pypdf.
 fast-pdf = ["PyMuPDF>=1.23"]
+# OCR rung for scan-only PDFs. Uses PyMuPDF's engine; also needs the Tesseract
+# binary installed on the system PATH (not a pip dependency).
+ocr = ["PyMuPDF>=1.23"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",

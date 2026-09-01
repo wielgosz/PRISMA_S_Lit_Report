@@ -44,6 +44,18 @@ prisma-s run --batch BATCH --output OUT.xlsx [--input PATH | --drive-folder ID_O
 | `--drive-token` | Where to cache the OAuth token (default `token.json`, written `0600`). |
 | `--keywords` | A keyword dictionary CSV. Columns: `group` (or `category`) and `term`, any case or order. Excel "CSV UTF-8" files (with BOM) are accepted. Omit to use the bundled dictionary. |
 | `--no-citation` | Do not print the "How to cite" block when the run finishes. |
+| `--no-ocr` | Skip the OCR rung. By default a PDF still textless after pypdf/PyMuPDF is OCR'd — but only if `tesseract` is on `PATH`. |
+| `--ocr-lang` | Tesseract language code(s) for OCR, e.g. `eng` or `eng+por` (default `eng`). |
+
+**PDF extraction is a per-document chain** (see [METHOD.md](METHOD.md)): a light
+library first, the other library only for documents that come back thin, and OCR
+only for documents with no text layer at all. For the OCR rung, install PyMuPDF
+and a system Tesseract:
+
+```bash
+pip install "prisma-s-lit-review[ocr]"     # PyMuPDF
+# then install Tesseract:  https://tesseract-ocr.github.io/tessdoc/Installation.html
+```
 
 A CSV that has no `term` column, or that yields zero terms, is a hard error —
 the run does not proceed to write an empty workbook.

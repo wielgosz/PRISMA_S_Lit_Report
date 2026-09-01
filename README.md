@@ -58,13 +58,16 @@ error rather than a silently empty run.
 
 Written beside `--output`: `*_results.xlsx` with sheets `Long_AllTerms` (one row
 per document × (group, term), zero counts included), `PRISMA-S_Compliance`
-(16-item checklist), and `Run_Metadata` (extraction backend, pages, words,
-characters, and status per document); plus `run_metadata.json` and
-`HOW_TO_CITE.txt`.
+(16-item checklist), and `Run_Metadata` (per document: extraction backend,
+pages, words, characters, whether the chain escalated, and status); plus
+`run_metadata.json` and `HOW_TO_CITE.txt`.
 
-For higher-fidelity PDF text extraction, install the optional PyMuPDF backend
-(AGPL-3.0): `pip install "prisma-s-lit-review[fast-pdf]"`. The default backend is
-pypdf.
+**PDF extraction is a per-document escalation chain** — a light library first,
+the other PDF library only for documents that come back thin, and OCR
+(Tesseract, opt-in via `[ocr]`) only for documents with no text layer at all.
+Install PyMuPDF for better/faster extraction: `pip install
+"prisma-s-lit-review[fast-pdf]"` (AGPL-3.0; the default pypdf-only install stays
+MIT-clean). See [docs/METHOD.md](docs/METHOD.md).
 
 ## Package layout
 

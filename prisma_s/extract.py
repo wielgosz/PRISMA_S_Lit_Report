@@ -1,10 +1,19 @@
 """
 Text extraction from PDF and DOCX files.
 
-PDF extraction uses **pypdf** by default.  If the optional ``fast-pdf`` extra is
-installed (``pip install prisma-s-lit-review[fast-pdf]``) PyMuPDF is used
-instead for higher-fidelity text; the backend actually used is recorded per
-document so a run stays reproducible and auditable.
+PDF extraction is a **per-document escalation chain**, so heavy processing is
+spent only where it is needed:
+
+    1. Primary PDF library  - PyMuPDF if the ``fast-pdf`` extra is installed,
+       otherwise pypdf.
+    2. Other PDF library     - tried when rung 1 returns no text, or fewer than
+       ``THIN_WORDS_PER_PAGE`` words per page; the richer result is kept.
+    3. OCR (PyMuPDF + Tesseract) - tried only when a document is still textless
+       after the PDF libraries, and only if Tesseract is on PATH.  Disable with
+       ``enable_ocr=False`` (CLI: ``--no-ocr``).
+
+Which rung produced each document's text, and whether the chain escalated, is
+recorded per document so a run stays reproducible and auditable.
 
 DOCX extraction uses python-docx.
 """
@@ -12,11 +21,19 @@ DOCX extraction uses python-docx.
 from __future__ import annotations
 
 import re
+import shutil
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import lru_cache
 from pathlib import Path
 
 SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
+
+# A document with fewer than this many words per page is treated as
+# under-extracted and the chain escalates to the other PDF library.
+THIN_WORDS_PER_PAGE = 40.0
+# Don't bother escalating tiny documents (cover pages, one-page forms).
+_MIN_PAGES_FOR_THIN_CHECK = 2
 
 # Resolved once: is PyMuPDF importable?  A missing optional dependency must be a
 # one-time notice, not a silent per-file downgrade.  Newer PyMuPDF prefers the
@@ -39,14 +56,30 @@ class ExtractResult:
     first_text: str
     metadata: dict
     pages: int | None  # page count for PDFs; None for DOCX
-    backend: str  # "pymupdf" | "pypdf" | "python-docx"
+    backend: str  # "pymupdf" | "pypdf" | "ocr" | "python-docx"
+    escalated: bool = False
+    chain: str = ""  # human-readable trace, e.g. "pypdf 12w -> pymupdf 11040w"
+    attempts: list[str] = field(default_factory=list)
+
+
+def _words(text: str) -> int:
+    return len(text.split())
+
+
+def _looks_thin(text: str, pages: int | None) -> bool:
+    n = _words(text)
+    if n == 0:
+        return True
+    if pages and pages >= _MIN_PAGES_FOR_THIN_CHECK:
+        return (n / pages) < THIN_WORDS_PER_PAGE
+    return False
 
 
 # ---------------------------------------------------------------------------
-# PDF
+# PDF library rungs
 # ---------------------------------------------------------------------------
 
-def _extract_pdf_fitz(pdf_path: Path) -> ExtractResult:
+def _extract_pdf_pymupdf(pdf_path: Path) -> ExtractResult:
     try:
         import pymupdf as fitz
     except ImportError:
@@ -70,6 +103,10 @@ def _extract_pdf_fitz(pdf_path: Path) -> ExtractResult:
     )
 
 
+# Legacy alias (kept for any external callers / tests).
+_extract_pdf_fitz = _extract_pdf_pymupdf
+
+
 def _extract_pdf_pypdf(pdf_path: Path) -> ExtractResult:
     from pypdf import PdfReader
 
@@ -91,21 +128,99 @@ def _extract_pdf_pypdf(pdf_path: Path) -> ExtractResult:
     )
 
 
-def extract_pdf(pdf_path: Path) -> ExtractResult:
-    """Extract a PDF with PyMuPDF if available, otherwise pypdf.
+# ---------------------------------------------------------------------------
+# OCR rung
+# ---------------------------------------------------------------------------
 
-    Data errors (corrupt file, encrypted, no text layer) propagate to the
-    caller so the document can be recorded as skipped.
-    """
+@lru_cache(maxsize=1)
+def _ocr_available() -> bool:
+    """OCR needs PyMuPDF's engine and the Tesseract binary on PATH."""
+    return _HAVE_FITZ and shutil.which("tesseract") is not None
+
+
+def _ocr_pdf(pdf_path: Path, lang: str = "eng", dpi: int = 200) -> ExtractResult:
+    """Rasterise every page and OCR it with Tesseract via PyMuPDF."""
+    try:
+        import pymupdf as fitz
+    except ImportError:
+        import fitz
+
+    doc = fitz.open(str(pdf_path))
+    n = doc.page_count
+    out: list[str] = []
+    for i in range(n):
+        page = doc.load_page(i)
+        tp = page.get_textpage_ocr(flags=3, language=lang, dpi=dpi, full=True)
+        out.append(page.get_text("text", textpage=tp) or "")
+    full = "\n".join(out)
+    md = doc.metadata or {}
+    return ExtractResult(
+        full_text=full,
+        first_text=out[0] if out else "",
+        metadata={
+            "/Title": md.get("title", ""),
+            "/CreationDate": md.get("creationDate", ""),
+            "/ModDate": md.get("modDate", ""),
+        },
+        pages=n,
+        backend="ocr",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Chain
+# ---------------------------------------------------------------------------
+
+def _pdf_library_rungs():
+    """Primary library first, then the other one (if it is installed)."""
     if _HAVE_FITZ:
+        return [("pymupdf", _extract_pdf_pymupdf), ("pypdf", _extract_pdf_pypdf)]
+    return [("pypdf", _extract_pdf_pypdf)]  # pymupdf not installed
+
+
+def extract_pdf(
+    pdf_path: Path, *, enable_ocr: bool = True, ocr_lang: str = "eng"
+) -> ExtractResult:
+    """Extract *pdf_path* via the escalation chain (see the module docstring)."""
+    attempts: list[str] = []
+    best: ExtractResult | None = None
+
+    for name, fn in _pdf_library_rungs():
         try:
-            return _extract_pdf_fitz(pdf_path)
-        except Exception as exc:  # a data error in this specific file
-            warnings.warn(
-                f"PyMuPDF failed on {pdf_path.name} ({exc!r}); retrying with pypdf",
-                stacklevel=2,
-            )
-    return _extract_pdf_pypdf(pdf_path)
+            res = fn(pdf_path)
+        except Exception as exc:
+            attempts.append(f"{name} error: {exc}")
+            continue
+        attempts.append(f"{name} {_words(res.full_text)}w")
+        if best is None or _words(res.full_text) > _words(best.full_text):
+            best = res
+        if not _looks_thin(res.full_text, res.pages):
+            break  # good enough - do not escalate
+
+    ran_ocr = False
+    if (
+        enable_ocr
+        and best is not None
+        and _words(best.full_text) == 0
+        and _ocr_available()
+    ):
+        ran_ocr = True
+        try:
+            ocr_res = _ocr_pdf(pdf_path, lang=ocr_lang)
+            attempts.append(f"ocr {_words(ocr_res.full_text)}w")
+            if _words(ocr_res.full_text) > _words(best.full_text):
+                best = ocr_res
+        except Exception as exc:
+            attempts.append(f"ocr error: {exc}")
+
+    if best is None:
+        raise RuntimeError("all PDF extractors failed: " + "; ".join(attempts))
+
+    successful = [a for a in attempts if "error" not in a]
+    best.attempts = attempts
+    best.chain = " -> ".join(attempts)
+    best.escalated = len(successful) > 1 or ran_ocr
+    return best
 
 
 # ---------------------------------------------------------------------------
@@ -135,11 +250,13 @@ def extract_docx(docx_path: Path) -> ExtractResult:
 # Dispatch
 # ---------------------------------------------------------------------------
 
-def extract_text(file_path: Path) -> ExtractResult:
+def extract_text(
+    file_path: Path, *, enable_ocr: bool = True, ocr_lang: str = "eng"
+) -> ExtractResult:
     """Dispatch to the correct extractor based on file extension."""
     suffix = file_path.suffix.lower()
     if suffix == ".pdf":
-        return extract_pdf(file_path)
+        return extract_pdf(file_path, enable_ocr=enable_ocr, ocr_lang=ocr_lang)
     if suffix == ".docx":
         return extract_docx(file_path)
     raise ValueError(f"Unsupported file type: {suffix!r}")

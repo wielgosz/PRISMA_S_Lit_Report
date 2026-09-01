@@ -52,6 +52,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   multi-page PDF fixtures via `reportlab` (dev extra). `--doctest-modules` on.
 
 ### Changed
+- **PDF extraction is now a per-document escalation chain.** A light PDF
+  library runs first; the other PDF library is tried only for documents that
+  come back with no text or fewer than ~40 words per page (the richer result
+  is kept); an OCR rung (PyMuPDF + Tesseract, `[ocr]` extra, `--no-ocr` to
+  disable, `--ocr-lang` to set the language) runs only for documents still
+  textless. `Run_Metadata` gains an `Escalated` column and the chain trace in
+  `Status`; `run_metadata.json` gains `backend_counts` / `escalated_documents`
+  / `textless_documents`.
 - **Default PDF backend is now pypdf** (BSD). PyMuPDF (AGPL-3.0) moves to an
   optional extra: `pip install "prisma-s-lit-review[fast-pdf]"`. The backend
   used is recorded per document.

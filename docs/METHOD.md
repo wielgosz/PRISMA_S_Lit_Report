@@ -40,13 +40,29 @@ save. This order follows the protocol spec.
 `guess_title` prefers a non-sentinel `/Title`, else the first line of the first
 page longer than 12 characters, else `"Unknown"`.
 
-## Extraction backend
+## Extraction — per-document escalation chain
 
-pypdf is the default. If the optional `fast-pdf` extra is installed, PyMuPDF is
-used instead. The backend used for **each** document, plus its page / word /
-character counts, is written to the `Run_Metadata` sheet and `run_metadata.json`
-so a run is reproducible and its completeness auditable. A missing PyMuPDF is a
-one-time notice, never a silent per-file downgrade.
+Heavy processing is spent only on the documents that need it
+(`prisma_s/extract.py::extract_pdf`):
+
+1. **Primary PDF library** — PyMuPDF if the `fast-pdf` extra is installed,
+   otherwise pypdf.
+2. **Other PDF library** — tried when rung 1 returns no text, or fewer than
+   `THIN_WORDS_PER_PAGE` (default 40) words per page on a document of ≥ 2 pages.
+   The result with the most words is kept. (Real example: a 62-page standard
+   that pypdf read as 783 words came back as ~11,000 with PyMuPDF.)
+3. **OCR** — PyMuPDF's `get_textpage_ocr` (Tesseract), tried **only** when a
+   document is still textless after the PDF libraries, and only if `tesseract`
+   is on `PATH`. `enable_ocr=False` / `--no-ocr` skips it; `--ocr-lang`
+   (default `eng`, e.g. `eng+por`) sets the Tesseract language.
+
+Which rung won, whether the chain escalated, and the trace
+(`"pypdf 783w -> pymupdf 11040w"`) are recorded per document in `Run_Metadata`
+(`Backend`, `Escalated`, `Status`) and summarised in `run_metadata.json`
+(`backend_counts`, `escalated_documents`, `textless_documents`). A document with
+no text layer under any rung is reported `ok: no text extracted` — it needs an
+OCR'd source file. A missing PyMuPDF is a one-time notice, never a silent
+per-file downgrade.
 
 ## Large documents — no page chunking
 
