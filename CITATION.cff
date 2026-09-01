@@ -1,0 +1,46 @@
+cff-version: 1.2.0
+message: "If you use this software or its outputs, please cite both the software and the associated publication below."
+title: "PRISMA-S Lit Review"
+abstract: >-
+  A transparent, reproducible Python package for PRISMA-S aligned keyword
+  corpus analysis of PDF and DOCX literature.
+type: software
+authors:
+  - family-names: Wielgosz
+    given-names: Benjamin
+    orcid: "https://orcid.org/0000-0000-0000-0000"  # TODO: add ORCID
+version: "1.4.0"
+date-released: "2026-08-31"
+license: MIT
+repository-code: "https://github.com/wielgosz/PRISMA_S_Lit_Report"
+url: "https://github.com/wielgosz/PRISMA_S_Lit_Report"
+keywords:
+  - PRISMA-S
+  - systematic review
+  - literature review
+  - keyword search
+  - deforestation-free supply chains
+preferred-citation:
+  type: report
+  title: >-
+    Data for deforestation- and conversion-free (DCF) supply chain analyses:
+    Applied learnings from soy in Brazil (Guidebook)
+  authors:
+    - {family-names: Wielgosz, given-names: Benjamin}
+    - {family-names: "dos Santos", given-names: "A. B."}
+    - {family-names: Carter, given-names: "S."}
+    - {family-names: Berger, given-names: "A."}
+    - {family-names: Schneider, given-names: "M."}
+    - {family-names: Despontin, given-names: "M."}
+    - {family-names: Immelman, given-names: "J."}
+    - {family-names: Richter, given-names: "J."}
+    - {family-names: Couto, given-names: "A."}
+    - {family-names: Fitts, given-names: "L. A."}
+    - {family-names: Gao, given-names: "Y."}
+    - {family-names: Dionizio, given-names: "E."}
+  publisher:
+    name: World Resources Institute
+  year: 2026
+  status: in-press
+  notes: >-
+    In press. Update the final citation, year, and DOI on publication.
