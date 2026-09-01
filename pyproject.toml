@@ -19,13 +19,13 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
-    "pandas>=2.0",
-    "openpyxl>=3.1",
-    "PyMuPDF>=1.23",
-    "PyPDF2>=3.0",
+    "pandas>=2.0,<3",
+    "openpyxl>=3.1,<4",
+    "pypdf>=4.0",
     "python-docx>=1.1",
     "google-api-python-client>=2.100",
     "google-auth-httplib2>=0.2",
@@ -33,9 +33,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Higher-fidelity PDF text extraction. PyMuPDF is AGPL-3.0; keeping it optional
+# lets the default install stay MIT-compatible. `extract.py` falls back to pypdf.
+fast-pdf = ["PyMuPDF>=1.23"]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "reportlab>=4.0",
 ]
 
 [project.scripts]
@@ -49,13 +53,17 @@ Homepage = "https://github.com/wielgosz/PRISMA_S_Lit_Report"
 # Only collect this package's tests; the desktop_runner/ and protocols/
 # bundles ship their own test files with colliding basenames.
 testpaths = ["tests"]
+addopts = "--doctest-modules"
+
+[tool.setuptools]
+license-files = ["LICENSE", "LICENSE-CC-BY-4.0.txt"]
 
 [tool.setuptools.dynamic]
-version = { attr = "prisma_s.__version__" }
+version = { attr = "prisma_s._version.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["prisma_s*"]
 
 [tool.setuptools.package-data]
-"prisma_s" = ["data/*.csv", "data/*.md"]
+"prisma_s" = ["data/*.csv", "data/*.md", "data/citation/*.md", "py.typed"]
