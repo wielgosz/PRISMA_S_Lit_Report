@@ -7,6 +7,72 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.4.0] - 2026-08-31
+
+### Fixed (correctness)
+- A user keyword CSV saved from Excel (byte-order mark, capitalised headers, or
+  `term,group` column order) is now parsed correctly. A CSV with no `term`
+  column, or that yields zero terms, raises `ValueError` instead of silently
+  writing an empty workbook. `category` is accepted as a synonym for `group`.
+- An empty run (no documents, all extractions failed) no longer produces a
+  `(0, 0)` DataFrame; the frame always has the documented columns, and
+  `run_analysis` raises with an actionable message when there is nothing to do.
+- Matching now uses **alphanumeric boundaries** (`(?<![A-Za-z0-9]) ... (?![A-Za-z0-9])`)
+  instead of `\b`: terms that start or end with punctuation (`(CO2)`, `+ve`)
+  match, `_` is treated as a separator, and multi-word phrases tolerate a
+  hyphenated line break between words. A term listed under two groups is now
+  counted under each rather than silently dropped.
+- `guess_year` takes the first-page text year first and the document metadata
+  date only as a fallback (matching the protocol spec); returns `None` when
+  absent, so the `Year` column is a single nullable `Int64` dtype.
+- `.zip` input no longer leaks a full corpus copy into the temp directory;
+  `__MACOSX/` and `._*` entries are ignored.
+- The `PRISMA-S_Compliance` sheet no longer contains statements that are false
+  at runtime: it references the real `Run_Metadata` sheet, and the multi-lingual
+  note is formatted from the dictionary version actually used.
+- The compliance document count is the number of documents **processed**, not
+  discovered.
+- `token.json` (Drive OAuth) is written `0600`; a failed token refresh falls
+  back to interactive consent instead of aborting the run.
+
+### Added
+- `Run_Metadata` sheet + `run_metadata.json`: per-document extraction backend,
+  page / word / character counts, and status; run-level discovered / processed /
+  skipped totals. This is the artifact for checking extraction completeness.
+- `prisma-s cite [--lang en|pt-br|es|all]`; the trilingual "How to cite" block
+  is printed when a run finishes (suppress with `--no-citation`) and written to
+  `HOW_TO_CITE.txt` beside the results.
+- `LICENSE` (MIT, code), `LICENSE-CC-BY-4.0.txt` + `prisma_s/data/DATA_LICENSE.md`
+  (CC BY 4.0 for the dictionary, protocol spec, figures, and docs), and
+  `CITATION.cff` with the associated WRI guidebook as the preferred citation.
+- `docs/USAGE.md` and `docs/METHOD.md` (each protocol rule paired with its code);
+  `prisma_s/py.typed`.
+- Regression tests: `test_keywords.py`, `test_runner.py`, `test_extract.py`,
+  `test_cli.py`, `test_cite.py`, and additions to `test_search.py`; synthetic
+  multi-page PDF fixtures via `reportlab` (dev extra). `--doctest-modules` on.
+
+### Changed
+- **Default PDF backend is now pypdf** (BSD). PyMuPDF (AGPL-3.0) moves to an
+  optional extra: `pip install "prisma-s-lit-review[fast-pdf]"`. The backend
+  used is recorded per document.
+- Dependency bounds added (`pandas>=2.0,<3`, `openpyxl>=3.1,<4`); 3.13 classifier
+  added.
+- `prisma_s/__init__.py` no longer imports pandas at import time (`run_analysis`
+  is a lazy re-export); `__version__` / `PROTOCOL_VERSION` moved to a
+  dependency-free `prisma_s/_version.py`.
+- Version 1.4.0.
+
+### Removed
+- `scripts/keyword_corpus_analysis.py` — a pre-package monolith that duplicated
+  the extraction / matching logic and carried a third copy of the keyword list.
+
+### Deferred to 1.5
+- Term-frequency figures (port of the desktop-runner SVG spec), the v1.3
+  canonicalization dictionary (variant roll-up) as the default, Tkinter folder
+  pickers, `prisma-s template`, dated run-output folders.
+
+---
+
 ## [1.3.0] - 2026-08-31
 
 ### Fixed

@@ -6,7 +6,7 @@ to the matching logic can be validated for protocol compliance.
 """
 
 import pytest
-from prisma_s.search import build_term_index, count_terms
+from prisma_s.search import build_regex, build_term_index, count_terms
 
 
 def _index(*terms_with_groups):
@@ -90,3 +90,47 @@ def test_punctuation_boundary():
     idx = _index(("Supply Chain Node", "Mill"))
     result = count_terms("Sent to the Mill.", idx)
     assert result[0]["Count"] == 1
+
+
+# ---------------------------------------------------------------------------
+# v1.4: alphanumeric boundaries, duplicates, metacharacters
+# ---------------------------------------------------------------------------
+
+def test_term_starting_with_punctuation_matches():
+    idx = _index(("Emissions", "(CO2)"))
+    result = count_terms("annual (CO2) emissions and more (CO2) here", idx)
+    assert result[0]["Count"] == 2
+
+
+def test_term_with_leading_plus_matches():
+    idx = _index(("Sign", "+ve"))
+    assert count_terms("a +ve result", idx)[0]["Count"] == 1
+
+
+def test_underscore_is_a_boundary_not_a_word_char():
+    """\\b would fail this; alphanumeric boundaries treat '_' as a separator."""
+    idx = _index(("X", "data"))
+    assert count_terms("raw_data_set", idx)[0]["Count"] == 1
+
+
+def test_regex_metacharacters_are_literal():
+    idx = _index(("X", "a.b"))
+    result = {r["Term"]: r["Count"] for r in count_terms("a.b but not axb", idx)}
+    assert result["a.b"] == 1
+
+
+def test_duplicate_term_in_two_groups_counted_twice():
+    idx = _index(("A", "Coffee"), ("B", "Coffee"))
+    rows = count_terms("Coffee and more Coffee", idx)
+    assert len(rows) == 2
+    assert {(r["Group"], r["Count"]) for r in rows} == {("A", 2), ("B", 2)}
+
+
+def test_hyphenated_line_break_in_phrase():
+    idx = _index(("Node", "supply shed"))
+    assert count_terms("the supply-\nshed here", idx)[0]["Count"] == 1
+
+
+def test_build_regex_rejects_empty():
+    with pytest.raises(ValueError):
+        build_regex("   ")
