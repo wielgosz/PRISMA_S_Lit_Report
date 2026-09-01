@@ -134,3 +134,51 @@ def test_hyphenated_line_break_in_phrase():
 def test_build_regex_rejects_empty():
     with pytest.raises(ValueError):
         build_regex("   ")
+
+
+# ---------------------------------------------------------------------------
+# v1.5: strict matching + registry roll-up
+# ---------------------------------------------------------------------------
+
+def test_strict_requires_a_single_space():
+    rgx = build_regex("supply shed", strict=True)
+    assert rgx.search("the supply shed here") is not None
+    assert rgx.search("supply  shed") is None
+    assert rgx.search("supply\nshed") is None
+
+
+def test_strict_still_has_alphanumeric_boundaries():
+    assert build_regex("area", strict=True).search("catchment area near") is not None
+    assert build_regex("area", strict=True).search("areation") is None
+
+
+class _KW:
+    is_registry = True
+
+    def __init__(self, rows):
+        self._rows = rows
+
+    def canonical_terms(self):
+        out, idx = [], {}
+        for cat, tid, canon, var, iv in self._rows:
+            if (tid, canon) not in idx:
+                idx[(tid, canon)] = len(out)
+                out.append((cat, tid, canon, [], iv))
+            out[idx[(tid, canon)]][3].append(var)
+        return out
+
+
+def test_registry_rollup_sums_variants():
+    from prisma_s.search import build_registry_index, count_registry
+
+    kw = _KW([
+        ("C", "T1", "cooperative", "cooperative", True),
+        ("C", "T1", "cooperative", "coop", True),
+        ("C", "T2", "mill", "mill", True),
+    ])
+    idx = build_registry_index(kw)
+    rows = {r["Canonical Term"]: r for r in count_registry("a coop and a cooperative; no M", idx)}
+    assert rows["cooperative"]["Count"] == 2
+    assert rows["cooperative"]["Referenced"] == 1
+    assert rows["cooperative"]["Variant Counts"] == {"cooperative": 1, "coop": 1}
+    assert rows["mill"]["Count"] == 0 and rows["mill"]["Referenced"] == 0

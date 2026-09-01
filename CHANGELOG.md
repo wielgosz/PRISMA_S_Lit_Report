@@ -7,6 +7,44 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.5.0] - 2026-09-01
+
+### Changed - BREAKING
+- **The default keyword dictionary is now the v1.3 canonicalization registry**
+  (`prisma_s/data/keyword_dictionary_v1.3.csv`, 98 canonical terms). Many
+  explicit `search_variant`s roll up to one `canonical_term`; a document's count
+  for a canonical term is the sum of its variant counts. `--keywords bundled:1.1`
+  restores the flat v1.1 dictionary and the exact v1.4 output.
+- Registry-mode output: `Long_AllTerms` is now one row per (document x canonical
+  term) with `Category`, `Term ID`, `Canonical Term`, `Variants Included`,
+  `Variant Counts`, `Referenced`; new sheets `Term_Summary`, `D1_Key_Terms`
+  (report-ready, ranked by document frequency within category, filtered to
+  `include_in_visuals` terms with at least one referencing document) and
+  `Zero_Reference_Terms`. `Protocol Version` is stamped `1.3`.
+- Registry mode normalises each document's text first (NFC, LF line endings,
+  trailing-whitespace strip - `prisma_s/normalize.py`) and matches each variant
+  with a strict single literal space between words, mirroring the published
+  protocol. Flat (v1.1) mode is byte-identical to v1.4.
+- `matplotlib` is now a core dependency.
+
+### Added
+- **Term-frequency figures** (`prisma_s/figures.py`), on by default
+  (`--no-figures` to skip), written to `<output>/figures/` as SVG **and** PNG.
+  When the three canonical categories are present the guidebook's three figures
+  are produced with their legacy `DCF_PRISMA_S_Figure_{1,2,3}_*` filenames
+  (amber `#F0B310`, shared x-scale, ranked by document frequency); otherwise one
+  figure per category.
+- `--keywords bundled:1.1` / `bundled:1.3` selectors.
+- `run_metadata.json`: `dictionary_mode`, `n_canonical_terms`, `n_variants`,
+  `figures`.
+- Bundled `prisma_s/data/PRISMA_keyword_protocol_v1.3.md`.
+
+### Deferred to 1.6
+- Tkinter folder/file pickers + wizard `RunConfig` refactor; `prisma-s template`;
+  dated run-output folders.
+
+---
+
 ## [1.4.0] - 2026-08-31
 
 ### Fixed (correctness)

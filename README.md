@@ -37,12 +37,16 @@ prisma-s wizard
 Non-interactive:
 
 ```
-# Local folder, bundled keyword dictionary
+# Default: the bundled v1.3 canonicalization registry (98 canonical terms)
 prisma-s run --batch batch_01 --input /path/to/docs --output results/batch_01.xlsx
 
-# Custom keyword dictionary (CSV columns: group/category and term; Excel "CSV UTF-8" is fine)
+# The flat v1.1 dictionary instead (v1.4 behaviour)
 prisma-s run --batch batch_01 --input /path/to/docs --output results/batch_01.xlsx \
-    --keywords /path/to/keyword_dictionary_v1.2.csv
+    --keywords bundled:1.1
+
+# A custom dictionary (flat CSV, or a registry CSV with canonical_term/search_variant)
+prisma-s run --batch batch_01 --input /path/to/docs --output results/batch_01.xlsx \
+    --keywords /path/to/my_dictionary.csv
 
 # Google Drive folder (URL or bare ID); needs credentials.json
 prisma-s run --batch batch_01 --output results/batch_01.xlsx \
@@ -50,17 +54,24 @@ prisma-s run --batch batch_01 --output results/batch_01.xlsx \
     --drive-credentials credentials.json
 ```
 
-The bundled keyword dictionary ships inside the package
-(`prisma_s/data/keyword_dictionary_v1.1.csv`), so `--keywords` is optional.
-Excel "CSV UTF-8" files (with a byte-order mark) and headers in any case or order
-are accepted; a CSV with no `term` column, or that yields zero terms, is a hard
-error rather than a silently empty run.
+The default dictionary is the **v1.3 canonicalization registry** bundled at
+`prisma_s/data/keyword_dictionary_v1.3.csv`: many explicit `search_variant`s roll
+up to one `canonical_term`, counts are summed per canonical term, and results are
+ranked by document frequency — the method behind the published guidebook's
+Table D-1 and Figures 1–3. `--keywords bundled:1.1` restores the flat v1.1 list.
+Excel "CSV UTF-8" files and headers in any case/order are accepted; a CSV with no
+usable key column, or zero rows, is a hard error, not a silently empty run.
 
-Written beside `--output`: `*_results.xlsx` with sheets `Long_AllTerms` (one row
-per document × (group, term), zero counts included), `PRISMA-S_Compliance`
-(16-item checklist), and `Run_Metadata` (per document: extraction backend,
-pages, words, characters, whether the chain escalated, and status); plus
-`run_metadata.json` and `HOW_TO_CITE.txt`.
+Written beside `--output`:
+
+- `*_results.xlsx` — **registry mode**: `Long_AllTerms` (document × canonical
+  term, with per-variant breakdown), `Term_Summary`, `D1_Key_Terms` (report-ready,
+  ranked), `Zero_Reference_Terms`, `PRISMA-S_Compliance`, `Run_Metadata`.
+  **Flat mode**: `Long_AllTerms`, `PRISMA-S_Compliance`, `Run_Metadata`.
+- `figures/` — term-frequency bar charts (SVG + PNG); the three
+  `DCF_PRISMA_S_Figure_{1,2,3}_*` when the canonical categories are present.
+  `--no-figures` to skip.
+- `run_metadata.json`, `HOW_TO_CITE.txt`.
 
 **PDF extraction is a per-document escalation chain** — a light library first,
 the other PDF library only for documents that come back thin, and OCR

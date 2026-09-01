@@ -1,23 +1,43 @@
 # Method — how the counts are produced
 
-This pairs each rule of the PRISMA-S keyword protocol
-(`prisma_s/data/PRISMA_keyword_protocol_v1.1.md`) with the code that implements
-it, and records the decisions the protocol text does not spell out. The goal is
-that a reviewer of the science can check the implementation against the method
-in one pass.
+This pairs each protocol rule with the code that implements it. There are two
+dictionary shapes and two matching modes:
 
-## Pipeline
+- **Registry (v1.3, default)** — `prisma_s/data/keyword_dictionary_v1.3.csv` +
+  `PRISMA_keyword_protocol_v1.3.md`. Variants roll up to canonical terms; text
+  is normalised; matching is strict. This is the workflow behind the published
+  guidebook's Table D-1 and Figures 1–3.
+- **Flat (v1.1)** — `--keywords bundled:1.1`, `PRISMA_keyword_protocol_v1.1.md`.
+  Every dictionary row is an independent term; lenient whitespace matching;
+  byte-identical to v1.4.
+
+## v1.3 canonicalization registry (default)
+
+| Rule | Implementation |
+|---|---|
+| Dictionary schema | `category, canonical_term, search_variant` (+ optional `term_id`, `active`, `include_in_visuals`). `prisma_s/keywords.py::load_keywords` auto-detects it (`_looks_like_registry`) and drops rows where `active != yes`. |
+| Text normalisation | `prisma_s/normalize.py::normalize_text` — NFC, CRLF/CR → LF, trailing whitespace stripped per line. **No** de-hyphenation, **no** internal-whitespace collapse. Mirrors the published `freeze_extract_text_corpus.py`. Applied per document in registry mode only. |
+| Variant matching | `build_regex(variant, strict=True)` — `(?<![A-Za-z0-9])` + `re.escape(variant)` + `(?![A-Za-z0-9])`, IGNORECASE. Multi-word variants need a **single literal space** between words. |
+| Roll-up | `count_registry` — a document's count for a `canonical_term` is the **sum** of its `search_variant` counts (overlapping variants sum, as in the paper). Per-variant counts are kept in the `Variant Counts` column. |
+| Ranking | By **document frequency** (`number of reports referencing term`), then total occurrences. `prisma_s/runner.py::_build_d1`. |
+| `D1_Key_Terms` | `Term_Summary` filtered to `include_in_visuals == yes` **and** at least one referencing document, ranked within category. Category order matches the guidebook: Jurisdictional, Supply chain, Farm level, AOI. |
+| Figures 1–3 | `prisma_s/figures.py` — one horizontal bar chart per canonical category (jurisdictional/landscape, supply chain node, farm level), amber `#F0B310`, shared x-scale, legacy `DCF_PRISMA_S_Figure_{1,2,3}_*` filenames, SVG + PNG. |
+
+Byte-exact reproduction of the guidebook also depends on the same corpus and the
+PyMuPDF backend (`pip install "prisma-s-lit-review[fast-pdf]"`).
+
+## Pipeline (both modes)
 
 | Stage | Module | Entry point |
 |---|---|---|
 | Discover documents (folder / file / `.zip` / Drive) | `prisma_s/runner.py` | `_collect_local_files`, `prisma_s/drive.py:download_folder` |
 | Extract text | `prisma_s/extract.py` | `extract_text` → `ExtractResult` |
-| Build the term index | `prisma_s/search.py` | `build_term_index` |
-| Count per document | `prisma_s/search.py` | `count_terms` |
+| Build the index | `prisma_s/search.py` | `build_term_index` (flat) / `build_registry_index` (registry) |
+| Count per document | `prisma_s/search.py` | `count_terms` (flat) / `count_registry` (registry) |
 | Assemble + write workbook | `prisma_s/runner.py` | `run_analysis` |
 | Compliance checklist | `prisma_s/compliance.py` | `build_compliance_report` |
 
-## Matching rules
+## Flat (v1.1) matching rules
 
 | Protocol rule | Implementation | Notes |
 |---|---|---|

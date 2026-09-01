@@ -131,3 +131,63 @@ def test_repeated_runs_are_byte_stable(tmp_path, make_pdf):
     b = run_analysis("b", tmp_path / "b.xlsx", input_path=tmp_path, keyword_csv=kw,
                      emit_citation=False).drop(columns=["Run UTC"])
     pd.testing.assert_frame_equal(a, b)
+
+
+# ---------------------------------------------------------------------------
+# v1.5 registry mode
+# ---------------------------------------------------------------------------
+
+def _reg(tmp_path):
+    p = tmp_path / "reg.csv"
+    p.write_text(
+        "category,term_id,canonical_term,search_variant,active,include_in_visuals\n"
+        "Jurisdictional terms,T1,area,area,yes,yes\n"
+        "Jurisdictional terms,T1,area,sourcing area,yes,yes\n"
+        "Supply chain terms,T2,supplier,supplier,yes,yes\n"
+        "Supply chain terms,T3,mill,mill,yes,no\n"          # excluded from D1
+        "Farm level terms,T4,rare,rare-term,yes,yes\n",     # zero references
+        encoding="utf-8",
+    )
+    return p
+
+
+def test_registry_mode_sheets_and_rollup(tmp_path, make_docx):
+    make_docx("The area and the sourcing area. A supplier and a mill.", name="a.docx")
+    out = tmp_path / "out" / "r.xlsx"
+    df = run_analysis("v13", out, input_path=tmp_path, keyword_csv=_reg(tmp_path),
+                      emit_citation=False, figures=False)
+
+    assert list(df.columns)[:7] == [
+        "Batch", "Document Name", "Title", "Year", "Category", "Term ID", "Canonical Term",
+    ]
+    assert (df["Protocol Version"] == "1.3").all()
+    # roll-up = sum of variant counts: "area" x2 (incl. inside "sourcing area")
+    # + "sourcing area" x1 = 3.  Overlapping variants summing is the paper's rule.
+    area = df[df["Canonical Term"] == "area"].iloc[0]
+    assert area["Count"] == 3 and area["Referenced"] == 1
+
+    wb = openpyxl.load_workbook(out)
+    assert wb.sheetnames == [
+        "Long_AllTerms", "Term_Summary", "D1_Key_Terms", "Zero_Reference_Terms",
+        "PRISMA-S_Compliance", "Run_Metadata",
+    ]
+    d1 = pd.read_excel(out, sheet_name="D1_Key_Terms")
+    assert "mill" not in set(d1["term"])          # include_in_visuals == no
+    assert "rare" not in set(d1["term"])          # zero references
+    assert list(d1[d1["category"] == "Jurisdictional terms"]["term"]) == ["area"]
+    zero = pd.read_excel(out, sheet_name="Zero_Reference_Terms")
+    assert "rare" in set(zero["term"])
+
+    meta = json.loads((out.parent / "run_metadata.json").read_text())
+    assert meta["dictionary_mode"] == "registry"
+    assert meta["n_canonical_terms"] == 4
+
+
+def test_registry_runs_are_byte_stable(tmp_path, make_pdf):
+    make_pdf(["area and sourcing area", "supplier and area again"], name="a.pdf")
+    kw = _reg(tmp_path)
+    a = run_analysis("b", tmp_path / "a.xlsx", input_path=tmp_path, keyword_csv=kw,
+                     emit_citation=False, figures=False).drop(columns=["Run UTC"])
+    b = run_analysis("b", tmp_path / "b.xlsx", input_path=tmp_path, keyword_csv=kw,
+                     emit_citation=False, figures=False).drop(columns=["Run UTC"])
+    pd.testing.assert_frame_equal(a, b)
