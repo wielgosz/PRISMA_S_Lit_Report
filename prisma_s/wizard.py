@@ -62,7 +62,7 @@ def _header(title: str) -> None:
 
 
 def _count_bundled_terms() -> int:
-    return len(load_keywords(None)[0])
+    return load_keywords(None).n_terms
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +75,8 @@ def _step_terms(tmpdir: Path) -> tuple[Path, str]:
     print(
         "  How would you like to specify the search terms?\n\n"
         "  [1]  Use the bundled keyword dictionary"
-        f" (v{BUNDLED_VERSION}, {_count_bundled_terms()} terms)\n"
+        f" (v{BUNDLED_VERSION} canonical registry, {_count_bundled_terms()} terms;"
+        " `prisma-s run --keywords bundled:1.1` for the flat v1.1 list)\n"
         "  [2]  Enter terms manually (you will be prompted one by one)\n"
         "  [3]  Load from a custom CSV file  (columns: group/category and term)\n"
     )

@@ -79,8 +79,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     run_p.add_argument(
         "--keywords", default=None,
-        help="Path to a keyword dictionary CSV (columns: group/category and term). "
-             "Defaults to the bundled dictionary.",
+        help="'bundled:1.3' (default v1.3 canonicalization registry), "
+             "'bundled:1.1' (flat v1.1 dictionary), or a path to a CSV.",
+    )
+    run_p.add_argument(
+        "--no-figures", action="store_true", dest="no_figures",
+        help="Skip the term-frequency figures.",
     )
     run_p.add_argument(
         "--no-citation", action="store_true", dest="no_citation",
@@ -122,6 +126,7 @@ def _cmd_run(args: argparse.Namespace) -> None:
         emit_citation=not args.no_citation,
         enable_ocr=not args.no_ocr,
         ocr_lang=args.ocr_lang,
+        figures=not args.no_figures,
     )
     print(f"Done - {len(df):,} rows written to {args.output}")
 
