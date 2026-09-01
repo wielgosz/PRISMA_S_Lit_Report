@@ -19,10 +19,13 @@ from pathlib import Path
 SUPPORTED_EXTENSIONS = {".pdf", ".docx"}
 
 # Resolved once: is PyMuPDF importable?  A missing optional dependency must be a
-# one-time notice, not a silent per-file downgrade.
+# one-time notice, not a silent per-file downgrade.  Newer PyMuPDF prefers the
+# ``pymupdf`` module name; the legacy ``fitz`` alias still works but warns.
 try:  # pragma: no cover - depends on the install having the extra
-    import fitz  # noqa: F401  (PyMuPDF)
-
+    try:
+        import pymupdf as _fitz  # noqa: F401
+    except ImportError:
+        import fitz as _fitz  # noqa: F401
     _HAVE_FITZ = True
 except Exception:  # ImportError, or a broken build
     _HAVE_FITZ = False
@@ -44,7 +47,10 @@ class ExtractResult:
 # ---------------------------------------------------------------------------
 
 def _extract_pdf_fitz(pdf_path: Path) -> ExtractResult:
-    import fitz  # PyMuPDF
+    try:
+        import pymupdf as fitz
+    except ImportError:
+        import fitz
 
     doc = fitz.open(str(pdf_path))
     md = doc.metadata or {}
