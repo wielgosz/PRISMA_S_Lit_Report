@@ -1,61 +1,48 @@
 """
 Interactive setup wizard for prisma-s.
 
-Running ``prisma-s wizard`` (or calling ``run_wizard()`` from Python) walks
-the user through four configuration steps on the command line:
+``prisma-s wizard`` (or ``run_wizard()`` from Python) walks the user through
+four steps on the command line:
 
-    Step 1 - Search terms
-        Choose the bundled keyword dictionary, enter terms manually, or
-        point to a custom CSV file.
+    Step 1 - Search terms   : bundled dictionary, manual entry, or a custom CSV.
+    Step 2 - Source location: a local folder / file, or a Google Drive folder.
+    Step 3 - Batch identifier.
+    Step 4 - Output folder.
 
-    Step 2 - Source location
-        Paste a Google Drive folder URL / ID  OR  enter a local folder path.
+After a confirmation prompt it calls ``run_analysis()``.
 
-    Step 3 - Batch identifier
-        A short label written into every output row (e.g. "batch_01").
-
-    Step 4 - Output location
-        Enter a local folder path where the .xlsx will be written.
-        (Google Drive output is not yet supported; upload manually after the run.)
-
-After confirmation the wizard calls ``run_analysis()`` directly.
-
-Design notes
-------------
-- All prompts accept blank input to accept the suggested default.
-- Drive folder URLs (https://drive.google.com/drive/folders/...) are accepted
-  and the folder ID is extracted automatically.
-- Terms entered manually are assigned to a user-supplied group name (default
-  "Custom") so the output Group column remains consistent.
-- A temporary in-memory CSV is built when the user enters terms manually,
-  meaning keyword loading still flows through the standard ``keywords.py``
-  path - no special-case code in the runner.
+Notes
+-----
+- All prompts accept blank input to take the shown default.
+- Drive folder URLs are accepted and the folder ID is extracted automatically.
+- Manually entered terms are written to a CSV inside a temporary directory that
+  is removed when the wizard returns; keyword loading always flows through the
+  normal ``keywords.py`` path.
 """
 
 from __future__ import annotations
 
+import contextlib
 import csv
-import io
-import os
 import re
 import tempfile
 from pathlib import Path
 
 from ._console import enable_utf8_console
 from .drive import parse_folder_id
-from .keywords import BUNDLED_VERSION, bundled_dict_path
+from .keywords import BUNDLED_VERSION, bundled_dict_path, load_keywords
+
+_ILLEGAL_BATCH_CHARS = re.compile(r'[\\/:*?"<>|]+')
 
 
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
+def _sanitize_batch_id(raw: str) -> str:
+    """Make *raw* safe to embed in a filename on every OS."""
+    cleaned = _ILLEGAL_BATCH_CHARS.sub("", raw).strip()
+    cleaned = re.sub(r"\s+", "_", cleaned)
+    return cleaned or "batch"
+
 
 def _prompt(message: str, default: str = "") -> str:
-    """Print *message* and read a line of input.
-
-    If the user presses Enter without typing anything and *default* is
-    provided, the default value is returned and echoed.
-    """
     suffix = f" [{default}]" if default else ""
     raw = input(f"{message}{suffix}: ").strip()
     if not raw and default:
@@ -65,7 +52,6 @@ def _prompt(message: str, default: str = "") -> str:
 
 
 def _hr(char: str = "-", width: int = 60) -> None:
-    """Print a horizontal rule."""
     print(char * width)
 
 
@@ -75,66 +61,45 @@ def _header(title: str) -> None:
     _hr()
 
 
+def _count_bundled_terms() -> int:
+    return len(load_keywords(None)[0])
+
+
 # ---------------------------------------------------------------------------
-# Step implementations
+# Steps
 # ---------------------------------------------------------------------------
 
-def _step_terms() -> tuple[Path, str]:
-    """Prompt the user for a keyword source.
-
-    Returns
-    -------
-    csv_path : Path
-        Path to the keyword CSV to use (may be a temp file).
-    kw_version : str
-        Version string to display (may be 'custom').
-    """
+def _step_terms(tmpdir: Path) -> tuple[Path, str]:
+    """Return ``(csv_path, version)`` for the chosen keyword source."""
     _header("Step 1 of 4 - Search Terms")
     print(
-        "  How would you like to specify the search terms?\n"
-        "\n"
+        "  How would you like to specify the search terms?\n\n"
         "  [1]  Use the bundled keyword dictionary"
         f" (v{BUNDLED_VERSION}, {_count_bundled_terms()} terms)\n"
         "  [2]  Enter terms manually (you will be prompted one by one)\n"
-        "  [3]  Load from a custom CSV file  (columns: group, term)\n"
+        "  [3]  Load from a custom CSV file  (columns: group/category and term)\n"
     )
     choice = _prompt("Choice", default="1")
 
-    if choice == "1":
-        csv_path = bundled_dict_path()
-        print(f"\n  Using bundled dictionary: {csv_path.name}")
-        return csv_path, BUNDLED_VERSION
+    if choice == "2":
+        return _enter_terms_manually(tmpdir)
 
-    elif choice == "2":
-        return _enter_terms_manually()
-
-    elif choice == "3":
+    if choice == "3":
         while True:
-            path_str = _prompt("Path to CSV file")
-            csv_path = Path(path_str)
+            csv_path = Path(_prompt("Path to CSV file"))
             if csv_path.is_file():
                 m = re.search(r"v(\d+\.\d+)", csv_path.stem)
-                version = m.group(1) if m else "custom"
                 print(f"\n  Loaded: {csv_path.name}")
-                return csv_path, version
+                return csv_path, (m.group(1) if m else "custom")
             print(f"  File not found: {csv_path}  - please try again.")
 
-    else:
+    if choice != "1":
         print("  Unrecognised choice - using bundled dictionary.")
-        return bundled_dict_path(), BUNDLED_VERSION
+    print(f"\n  Using bundled dictionary: {bundled_dict_path().name}")
+    return bundled_dict_path(), BUNDLED_VERSION
 
 
-def _count_bundled_terms() -> int:
-    """Return the number of terms in the bundled dictionary."""
-    try:
-        with open(bundled_dict_path(), newline="", encoding="utf-8") as f:
-            return sum(1 for row in csv.DictReader(f) if row.get("term", "").strip())
-    except Exception:
-        return 0
-
-
-def _enter_terms_manually() -> tuple[Path, str]:
-    """Interactively collect terms from the user and write to a temp CSV."""
+def _enter_terms_manually(tmpdir: Path) -> tuple[Path, str]:
     print(
         "\n  Enter one search term per line.  Press Enter on a blank line when done.\n"
         "  Terms are case-insensitive; multi-word phrases are supported.\n"
@@ -152,150 +117,126 @@ def _enter_terms_manually() -> tuple[Path, str]:
             break
         terms.append(term)
 
-    # Write to a named temp file so keywords.py can read it normally
-    tmp = tempfile.NamedTemporaryFile(
-        mode="w",
-        suffix="_keyword_dictionary_vcustom.csv",
-        delete=False,
-        encoding="utf-8",
-        newline="",
-    )
-    writer = csv.writer(tmp)
-    writer.writerow(["group", "term"])
-    for t in terms:
-        writer.writerow([group, t])
-    tmp.close()
+    csv_path = tmpdir / "manual_keyword_dictionary_vcustom.csv"
+    with csv_path.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["group", "term"])
+        for t in terms:
+            writer.writerow([group, t])
 
-    print(f"\n  {len(terms)} term(s) saved to temporary dictionary.")
-    return Path(tmp.name), "custom"
+    print(f"\n  {len(terms)} term(s) recorded.")
+    return csv_path, "custom"
 
 
 def _step_source() -> tuple[str | None, str | None, str | None]:
-    """Prompt the user for the document source.
-
-    Returns
-    -------
-    input_path : str or None
-        Local folder/file path (None if Drive is used).
-    drive_folder_id : str or None
-        Parsed Drive folder ID (None if local is used).
-    drive_credentials : str or None
-        Path to credentials.json (None if local is used).
-    """
+    """Return ``(input_path, drive_folder_id, drive_credentials)``."""
     _header("Step 2 of 4 - Source Location")
     print(
-        "  Where are the documents to be searched?\n"
-        "\n"
+        "  Where are the documents to be searched?\n\n"
         "  [1]  Local folder or file\n"
         "  [2]  Google Drive folder (URL or folder ID)\n"
     )
     choice = _prompt("Choice", default="1")
 
     if choice == "2":
-        raw = _prompt("Drive folder URL or folder ID")
-        folder_id = parse_folder_id(raw)
+        folder_id = parse_folder_id(_prompt("Drive folder URL or folder ID"))
         print(f"  Folder ID: {folder_id}")
-
-        creds_default = "credentials.json"
-        creds = _prompt("Path to credentials.json", default=creds_default)
+        creds = _prompt("Path to credentials.json", default="credentials.json")
         if not Path(creds).is_file():
             print(
                 f"\n  WARNING: credentials file not found at '{creds}'.\n"
                 "  The run will fail unless this file exists at runtime.\n"
-                "  See README.md -> 'Google Drive setup' for instructions.\n"
+                "  See the Google Drive section of the README for setup.\n"
             )
         return None, folder_id, creds
 
-    else:
-        while True:
-            path_str = _prompt("Local folder or file path")
-            p = Path(path_str)
-            if p.exists():
-                return str(p), None, None
-            print(f"  Path not found: {p}  - please try again.")
+    while True:
+        p = Path(_prompt("Local folder or file path"))
+        if p.exists():
+            return str(p), None, None
+        print(f"  Path not found: {p}  - please try again.")
 
 
 def _step_batch() -> str:
-    """Prompt the user for a batch identifier."""
     _header("Step 3 of 4 - Batch Identifier")
     print(
         "  The batch ID is written into every output row so multiple runs\n"
         "  can be combined and distinguished in analysis.\n"
         "  Example: 'batch_01', 'pilot_2026', 'update_jun_2026'\n"
     )
-    return _prompt("Batch ID", default="batch_01")
+    return _sanitize_batch_id(_prompt("Batch ID", default="batch_01"))
 
 
 def _step_output() -> str:
-    """Prompt the user for the output folder path."""
     _header("Step 4 of 4 - Output Location")
     print(
-        "  Enter a local folder path where the Excel results file will be written.\n"
+        "  Enter a local folder path where the results will be written.\n"
         "  The folder will be created if it does not exist.\n"
     )
-    folder = _prompt("Output folder", default="results")
-    return folder
+    return _prompt("Output folder", default="results")
 
 
 # ---------------------------------------------------------------------------
-# Public entry point
+# Entry point
 # ---------------------------------------------------------------------------
 
 def run_wizard() -> None:
-    """Run the interactive setup wizard and execute the analysis.
-
-    This is the function called by ``prisma-s wizard`` on the command line.
-    It can also be imported and called directly from a Python script for a
-    guided interactive session.
-    """
+    """Run the interactive setup wizard and execute the analysis."""
     enable_utf8_console()
     print("\n" + "=" * 60)
     print("  PRISMA-S Keyword Corpus Analysis - Interactive Wizard")
     print("  https://www.prisma-statement.org/prisma-search")
     print("=" * 60)
     print(
-        "\n  This wizard will guide you through configuring a keyword\n"
-        "  search of your document corpus according to PRISMA-S\n"
-        "  methodology.  You will be asked to specify:\n"
-        "\n"
+        "\n  You will be asked to specify:\n\n"
         "    1. Search terms (keyword dictionary)\n"
         "    2. Source location (local folder or Google Drive)\n"
         "    3. Batch identifier\n"
         "    4. Output folder\n"
     )
 
-    # Collect configuration
-    keyword_csv, _kw_ver = _step_terms()
-    print()
-    input_path, drive_folder_id, drive_credentials = _step_source()
-    print()
-    batch_id = _step_batch()
-    print()
-    output_folder = _step_output()
+    with contextlib.ExitStack() as stack:
+        tmpdir = Path(
+            stack.enter_context(tempfile.TemporaryDirectory(prefix="prisma_s_wiz_"))
+        )
 
-    # Build output path
-    output_xlsx = str(Path(output_folder) / f"{batch_id}_results.xlsx")
+        keyword_csv, _kw_ver = _step_terms(tmpdir)
+        print()
+        input_path, drive_folder_id, drive_credentials = _step_source()
+        print()
+        batch_id = _step_batch()
+        print()
+        output_folder = _step_output()
 
-    # Confirm
-    _header("Confirm settings")
-    print(f"  Keyword dictionary : {keyword_csv}")
-    print(f"  Source             : {input_path or ('gdrive:' + drive_folder_id)}")
-    print(f"  Batch ID           : {batch_id}")
-    print(f"  Output file        : {output_xlsx}")
-    print()
-    confirm = _prompt("Run analysis? (yes/no)", default="yes").lower()
-    if confirm not in ("yes", "y"):
-        print("  Cancelled.")
-        return
+        output_xlsx = Path(output_folder) / f"{batch_id}_results.xlsx"
 
-    # Run
-    print()
-    from .runner import run_analysis
-    run_analysis(
-        batch_id=batch_id,
-        output_xlsx=output_xlsx,
-        input_path=input_path,
-        drive_folder_id=drive_folder_id,
-        drive_credentials=drive_credentials,
-        keyword_csv=str(keyword_csv),
-    )
+        _header("Confirm settings")
+        print(f"  Keyword dictionary : {keyword_csv}")
+        print(f"  Source             : {input_path or ('gdrive:' + str(drive_folder_id))}")
+        print(f"  Batch ID           : {batch_id}")
+        print(f"  Output file        : {output_xlsx}")
+        print()
+
+        if output_xlsx.exists():
+            overwrite = _prompt(
+                f"{output_xlsx.name} already exists. Overwrite? (yes/no)", default="no"
+            ).lower()
+            if overwrite not in ("yes", "y"):
+                print("  Cancelled.")
+                return
+
+        if _prompt("Run analysis? (yes/no)", default="yes").lower() not in ("yes", "y"):
+            print("  Cancelled.")
+            return
+
+        print()
+        from .runner import run_analysis
+
+        run_analysis(
+            batch_id=batch_id,
+            output_xlsx=str(output_xlsx),
+            input_path=input_path,
+            drive_folder_id=drive_folder_id,
+            drive_credentials=drive_credentials,
+            keyword_csv=str(keyword_csv),
+        )
