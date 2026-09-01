@@ -20,7 +20,7 @@ usable_python() {
 }
 
 python=""
-for c in python3.12 python3.11 python3.10 python3.9 python3 python; do
+for c in python3.13 python3.12 python3.11 python3.10 python3.9 python3 python; do
     if usable_python "$c"; then python="$c"; break; fi
 done
 
@@ -40,8 +40,8 @@ else
 fi
 
 "$venv_path/bin/python" -m pip install --upgrade pip --quiet
-echo "Installing prisma-s (downloads pandas, PyMuPDF, and the Google API client; can take a few minutes)..."
-"$venv_path/bin/python" -m pip install "$repo_root"
+echo "Installing prisma-s (downloads pandas, pypdf, and the Google API client; can take a few minutes)..."
+"$venv_path/bin/python" -m pip install --upgrade --force-reinstall "$repo_root"
 
 echo
 echo "Installed. Verify with:"

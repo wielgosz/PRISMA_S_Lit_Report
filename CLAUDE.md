@@ -25,18 +25,18 @@ Published at: `https://github.com/wielgosz/PRISMA_S_Lit_Report`
 - Zero-count rows included for every document × term combination
 - Canonical output is long-format; Production Protocol v1.1 is **locked** — never edit a released
   protocol or keyword-dict version, only append a new version
-- Batch processing for scalability; large PDFs may be chunked by page
+- Batch processing for scalability; full text is scanned as one string
+  (no page chunking — see `docs/METHOD.md`)
 
 ## Repository structure
 
-See `README.md` "Repository structure" section for the full package layout
-(`prisma_s/` installable package with `keywords.py`, `extract.py`, `search.py`, `drive.py`,
-`compliance.py`, `wizard.py`, `runner.py`, `cli.py`).
-
-Additional context docs:
+See the "Package layout" section of `README.md`. Key docs:
+- `docs/USAGE.md` — end-user usage reference
+- `docs/METHOD.md` — each protocol rule paired with the implementing code
 - `docs/CLAUDE_PROJECT_CONTEXT.md` — short task-oriented context stub
 - `docs/project_context_summary.md` — project goal / method-decision summary
-- `CHANGELOG.md` — full version history (currently v1.2.0)
+- `docs/dev/CLAUDE_CODE_PUSH_INSTRUCTIONS.md` — historical apply/push notes
+- `CHANGELOG.md` — full version history
 - `prisma_s/data/PRISMA_keyword_protocol_v1.1.md` — locked protocol spec
 
 ## Working conventions

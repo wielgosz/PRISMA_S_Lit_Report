@@ -40,7 +40,7 @@ Non-interactive:
 # Local folder, bundled keyword dictionary
 prisma-s run --batch batch_01 --input /path/to/docs --output results/batch_01.xlsx
 
-# Custom keyword dictionary (CSV with group,term columns; save as UTF-8)
+# Custom keyword dictionary (CSV columns: group/category and term; Excel "CSV UTF-8" is fine)
 prisma-s run --batch batch_01 --input /path/to/docs --output results/batch_01.xlsx \
     --keywords /path/to/keyword_dictionary_v1.2.csv
 
@@ -52,27 +52,68 @@ prisma-s run --batch batch_01 --output results/batch_01.xlsx \
 
 The bundled keyword dictionary ships inside the package
 (`prisma_s/data/keyword_dictionary_v1.1.csv`), so `--keywords` is optional.
+Excel "CSV UTF-8" files (with a byte-order mark) and headers in any case or order
+are accepted; a CSV with no `term` column, or that yields zero terms, is a hard
+error rather than a silently empty run.
 
-Output workbook: sheet `Long_AllTerms` (one row per document x term, zero counts
-included) and sheet `PRISMA-S_Compliance` (16-item checklist status).
+Written beside `--output`: `*_results.xlsx` with sheets `Long_AllTerms` (one row
+per document × (group, term), zero counts included), `PRISMA-S_Compliance`
+(16-item checklist), and `Run_Metadata` (extraction backend, pages, words,
+characters, and status per document); plus `run_metadata.json` and
+`HOW_TO_CITE.txt`.
+
+For higher-fidelity PDF text extraction, install the optional PyMuPDF backend
+(AGPL-3.0): `pip install "prisma-s-lit-review[fast-pdf]"`. The default backend is
+pypdf.
 
 ## Package layout
 
 ```text
 prisma_s/
-  keywords.py     versioned keyword-dictionary loader (bundled dict in data/)
-  extract.py      PDF (PyMuPDF -> PyPDF2 fallback) and DOCX text extraction
-  search.py       case-insensitive, word-boundary regex matching engine
+  keywords.py     keyword-dictionary loader (bundled dict in data/)
+  extract.py      PDF (pypdf; optional PyMuPDF) and DOCX text extraction
+  search.py       case-insensitive, alphanumeric-boundary regex matching engine
   drive.py        Google Drive folder ingestion
   compliance.py   PRISMA-S 16-item compliance report builder
+  citation.py     "How to cite" text (English / Português / Español)
   runner.py       run_analysis() orchestrator
   wizard.py       interactive CLI setup wizard
   cli.py          argparse entry point (the prisma-s command)
-  data/           bundled keyword dictionary + locked protocol spec
+  data/           bundled keyword dictionary, locked protocol spec, citation text
 ```
 
-Method decisions and conventions are recorded in
-[CLAUDE.md](CLAUDE.md); full version history in [CHANGELOG.md](CHANGELOG.md).
+- Usage reference: [docs/USAGE.md](docs/USAGE.md)
+- Method — each protocol rule paired with the code that implements it:
+  [docs/METHOD.md](docs/METHOD.md)
+- Version history: [CHANGELOG.md](CHANGELOG.md)
+
+## License
+
+The **source code** is released under the [MIT License](LICENSE). The **keyword
+dictionary, protocol specification, generated figures, and documentation** are
+released under [Creative Commons Attribution 4.0](LICENSE-CC-BY-4.0.txt)
+(see [prisma_s/data/DATA_LICENSE.md](prisma_s/data/DATA_LICENSE.md)) — reuse and
+adaptation are welcome **provided you cite the original tool and publication**.
+
+## How to cite / Como citar / Cómo citar
+
+Run `prisma-s cite` for this text in all three languages; it is also printed
+when a run finishes and written to `HOW_TO_CITE.txt`.
+
+**The tool** — Wielgosz, B. (2026). *PRISMA-S Lit Review* (Version 1.4)
+[Computer software]. https://github.com/wielgosz/PRISMA_S_Lit_Report
+
+**The associated publication** — Wielgosz, B., dos Santos, A. B., Carter, S.,
+Berger, A., Schneider, M., Despontin, M., Immelman, J., Richter, J., Couto, A.,
+Fitts, L. A., Gao, Y., & Dionizio, E. (in press). *Data for deforestation- and
+conversion-free (DCF) supply chain analyses: Applied learnings from soy in
+Brazil (Guidebook).* World Resources Institute.
+*(Final citation and DOI to be added on publication.)*
+
+Author: https://www.linkedin.com/in/benjamin-wielgosz/
+
+> The Portuguese and Spanish versions currently carry the English text under a
+> `TRANSLATION NEEDED` banner, pending native-speaker review.
 
 ---
 
