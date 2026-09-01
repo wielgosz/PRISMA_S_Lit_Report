@@ -39,7 +39,8 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `Run_Metadata` sheet + `run_metadata.json`: per-document extraction backend,
   page / word / character counts, and status; run-level discovered / processed /
   skipped totals. This is the artifact for checking extraction completeness.
-- `prisma-s cite [--lang en|pt-br|es|all]`; the trilingual "How to cite" block
+- `prisma-s cite [--lang en|pt-br|es|all]` in English, Brazilian Portuguese,
+  and Spanish; the block
   is printed when a run finishes (suppress with `--no-citation`) and written to
   `HOW_TO_CITE.txt` beside the results.
 - `LICENSE` (MIT, code), `LICENSE-CC-BY-4.0.txt` + `prisma_s/data/DATA_LICENSE.md`

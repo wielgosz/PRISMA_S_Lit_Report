@@ -1,32 +1,33 @@
 # Como citar
 
-> **TRADUÇÃO PENDENTE (português do Brasil).** O texto abaixo está em inglês e
-> deve ser substituído por uma tradução revisada por falante nativo. A estrutura
-> e os dados (citações, links, licença) são finais.
+> Tradução para português (Brasil). Revisão por falante nativo é recomendada; as
+> referências bibliográficas são mantidas na forma canônica em inglês.
 
-If you use this tool or its outputs in published or shared work, please cite:
+Se você utilizar esta ferramenta ou os seus resultados em trabalhos publicados
+ou compartilhados, por favor cite:
 
-**The tool**
-> Wielgosz, B. (2026). *PRISMA-S Lit Review* (Version 1.4) [Computer software].
+**A ferramenta**
+> Wielgosz, B. (2026). *PRISMA-S Lit Review* (Versão 1.4) [Software].
 > https://github.com/wielgosz/PRISMA_S_Lit_Report
 
-**The associated publication**
+**A publicação associada**
 > Wielgosz, B., dos Santos, A. B., Carter, S., Berger, A., Schneider, M.,
 > Despontin, M., Immelman, J., Richter, J., Couto, A., Fitts, L. A., Gao, Y., &
-> Dionizio, E. (in press). *Data for deforestation- and conversion-free (DCF)
+> Dionizio, E. (no prelo). *Data for deforestation- and conversion-free (DCF)
 > supply chain analyses: Applied learnings from soy in Brazil (Guidebook).*
 > World Resources Institute.
-> [Final citation and DOI to be added on publication.]
+> [Citação final e DOI a serem adicionados na publicação.]
 
 ## Links
 
-- Software repository: https://github.com/wielgosz/PRISMA_S_Lit_Report
-- Author: https://www.linkedin.com/in/benjamin-wielgosz/
+- Repositório do software: https://github.com/wielgosz/PRISMA_S_Lit_Report
+- Autor: https://www.linkedin.com/in/benjamin-wielgosz/
 
-## Licence
+## Licença
 
-The source code is released under the MIT Licence. The keyword dictionary, the
-protocol specification, generated figures, and the documentation are released
-under the Creative Commons Attribution 4.0 International Licence (CC BY 4.0):
-you may share and adapt them for any purpose, **provided you cite the original
-tool and publication as above**.
+O código-fonte é disponibilizado sob a Licença MIT. O dicionário de
+palavras-chave, a especificação do protocolo, as figuras geradas e a
+documentação são disponibilizados sob a Licença Creative Commons Atribuição 4.0
+Internacional (CC BY 4.0): você pode compartilhá-los e adaptá-los para qualquer
+finalidade, **desde que cite a ferramenta e a publicação originais conforme
+indicado acima**.

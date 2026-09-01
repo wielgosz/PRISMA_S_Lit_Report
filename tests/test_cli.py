@@ -54,4 +54,5 @@ def test_cite_lang(capsys):
 
     sys.argv = ["prisma-s", "cite", "--lang", "pt-br"]
     cli.main()
-    assert "TRADUÇÃO PENDENTE" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Como citar" in out and "World Resources Institute" in out

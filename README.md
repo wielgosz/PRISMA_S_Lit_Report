@@ -115,8 +115,9 @@ Brazil (Guidebook).* World Resources Institute.
 
 Author: https://www.linkedin.com/in/benjamin-wielgosz/
 
-> The Portuguese and Spanish versions currently carry the English text under a
-> `TRANSLATION NEEDED` banner, pending native-speaker review.
+> Portuguese and Spanish translations are provided (`prisma-s cite --lang pt-br`
+> / `es`); native-speaker review is welcome. The bibliographic references are
+> kept in canonical English in every language.
 
 ---
 
