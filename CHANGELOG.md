@@ -7,6 +7,21 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [1.5.1] - 2026-09-02
+
+### Added
+- `prisma-s-gui` - a Tkinter desktop GUI over `run_analysis`: pick a corpus
+  (local folder, file/zip, or Google Drive), an output folder, a keyword
+  dictionary, and the figure / OCR / citation toggles, then watch the log.
+  Ships with the pip package; also the front-end of the standalone Windows
+  executable.
+- `desktop/` - a PyInstaller `--onedir` build of the package
+  (`desktop/build_exe.ps1`, `desktop/prisma-s.spec`) and a
+  `.github/workflows/build-exe.yml` that attaches the zipped build to a
+  `v*` tag's GitHub Release.
+
+---
+
 ## [1.5.0] - 2026-09-01
 
 ### Changed - BREAKING

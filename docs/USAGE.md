@@ -28,6 +28,20 @@ confirmation. Every prompt has a default; press Enter to accept it. On a machine
 with no console (a double-clicked shortcut) or piped input the wizard exits
 cleanly with a message rather than a traceback.
 
+## Desktop GUI
+
+```
+prisma-s-gui
+```
+
+A single window with the same options as `prisma-s run`: corpus source (local
+folder, local file/zip, or a Google Drive folder), output folder, batch ID,
+keyword dictionary (bundled v1.3 / bundled v1.1 / a custom CSV), and the
+figures / OCR / citation toggles. The run happens on a background thread; its
+log streams into the window, and **Open output folder** appears when it
+finishes. This GUI is also the front-end of the standalone Windows executable
+(see `desktop/README.md` and the project's GitHub Releases).
+
 ## Scripted run
 
 ```

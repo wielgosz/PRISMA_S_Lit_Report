@@ -48,6 +48,7 @@ dev = [
 
 [project.scripts]
 prisma-s = "prisma_s.cli:main"
+prisma-s-gui = "prisma_s.gui:main"
 
 [project.urls]
 Homepage = "https://github.com/wielgosz/PRISMA_S_Lit_Report"

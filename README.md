@@ -28,6 +28,13 @@ clone error and broken-Python venv failures) are covered in [INSTALL.md](INSTALL
 
 ## Use
 
+Desktop GUI (also the front-end of the standalone Windows `.exe` on the
+[Releases](https://github.com/wielgosz/PRISMA_S_Lit_Report/releases) page):
+
+```
+prisma-s-gui
+```
+
 Guided, interactive:
 
 ```

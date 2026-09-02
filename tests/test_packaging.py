@@ -14,7 +14,11 @@ from prisma_s.search import build_regex
 
 
 def test_version_is_unified():
-    assert __version__ == "1.5.0"
+    import re
+    from importlib.metadata import version
+
+    assert re.fullmatch(r"\d+\.\d+\.\d+", __version__), __version__
+    assert version("prisma-s-lit-review") == __version__
 
 
 def test_import_prisma_s_does_not_import_pandas():

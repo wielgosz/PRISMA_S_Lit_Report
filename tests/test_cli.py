@@ -12,7 +12,9 @@ def test_version(capsys):
     with pytest.raises(SystemExit) as e:
         cli.main()
     assert e.value.code == 0
-    assert "1.5.0" in capsys.readouterr().out
+    from prisma_s import __version__
+
+    assert __version__ in capsys.readouterr().out
 
 
 def test_run_requires_a_source(monkeypatch, capsys):
