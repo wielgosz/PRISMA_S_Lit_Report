@@ -60,6 +60,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `install.ps1` verifies a candidate interpreter by **building a throwaway
   venv**, instead of rejecting it because its path string contained "QGIS" or
   "WindowsApps".
+- **`pypdf` is now pinned to a narrow range (`>=6.17,<6.18`), not just a
+  floor.** Confirmed by direct comparison (desktop `.exe` build vs. a pip
+  install done at a different time): pypdf 6.16.2 vs. 6.17.0 extracted exactly
+  one different word/character on 2 of 136 real corpus documents. Every
+  keyword count (`Long_AllTerms`, `Term_Summary`, `D1_Key_Terms`) was
+  unaffected - the drift landed only in `Run_Metadata`'s diagnostic
+  `Words`/`Chars` columns. See README.md "A note on the pypdf dependency".
 
 ---
 

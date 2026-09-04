@@ -80,6 +80,12 @@ with an external tool** (for example `ocrmypdf in.pdf out.pdf`) and re-run.
 Rationale for dropping PyMuPDF: it is AGPL-3.0. pypdf-only keeps every runtime
 dependency permissively licensed (BSD / MIT / Apache-2.0 / PSF).
 
+`pypdf` is pinned to a narrow range in `pyproject.toml`, not just a floor:
+different pypdf point releases can extract a token or two differently on some
+documents (observed directly — see README.md "A note on the pypdf dependency"),
+which shows up only in `Run_Metadata`'s `Words`/`Chars` diagnostics, never in a
+keyword count.
+
 ## Large documents — no page chunking
 
 The whole document text is extracted and scanned as one string. The v1.1

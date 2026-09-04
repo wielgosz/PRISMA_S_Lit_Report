@@ -86,6 +86,30 @@ analysis; the run flags every no-text / thin document in `Run_Metadata`
 (`Needs OCR`) and `run_metadata.json` (`documents_needing_ocr`). Every runtime
 dependency is permissively licensed. See [docs/METHOD.md](docs/METHOD.md).
 
+### A note on the pypdf dependency
+
+prisma-s uses [pypdf](https://github.com/py-pdf/pypdf) as its only PDF text
+extractor, pinned to a narrow range (`pyproject.toml`). **A different pypdf
+version can shift a document's extracted word/character count by a token or
+two** — its text-layout heuristics change between releases. This was observed
+directly: the same PDF, extracted with pypdf 6.16.2 vs 6.17.0, differed by
+exactly one word/character on 2 of 136 real documents in testing, while every
+keyword count (`Long_AllTerms`, `Term_Summary`, `D1_Key_Terms`) stayed
+identical — the shift landed in incidental text, not in a matched term.
+
+**What this means for you:**
+- Two installs of the *same* prisma-s release, at different times, could
+  previously land on different pypdf point releases and report slightly
+  different `Words` / `Chars` figures in `Run_Metadata` for a small minority of
+  documents. The narrow pin above prevents that for anyone installing from
+  this repository as-is.
+- If you deliberately widen the pypdf pin (or already have a newer pypdf
+  installed for another project sharing the environment), expect the same kind
+  of small `Run_Metadata` drift — and re-run the two-runs-are-byte-stable check
+  in `docs/USAGE.md` before trusting a comparison across environments.
+- Keyword counts are the output that matters for the analysis; in every case
+  observed so far, drift stayed confined to the diagnostic word/char totals.
+
 ## Package layout
 
 ```text
