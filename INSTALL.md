@@ -57,9 +57,11 @@ then clone again. (This is not needed for the `prisma_s` package itself.)
 ## Troubleshooting
 
 **`ModuleNotFoundError: No module named 'encodings'` when creating the venv.**
-Your `python` on `PATH` is a broken or embedded interpreter - commonly the one
-bundled inside QGIS, or the Microsoft Store `python.exe` stub. `install.ps1`
-skips those automatically. To fix it manually, install the official build from
+Your `python` on `PATH` is a broken or embedded interpreter - some bundled
+Pythons (those shipped inside GIS/desktop suites, or the Microsoft Store
+`python.exe` stub) cannot create a venv. `install.ps1` verifies each candidate
+by actually building a throwaway venv and skips any that fail. To fix it
+manually, install the official build from
 <https://www.python.org/downloads/windows/> (tick *Add python.exe to PATH*),
 open a new terminal, and use `py -3 -m venv .venv`.
 

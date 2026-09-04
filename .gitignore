@@ -35,3 +35,8 @@ Thumbs.db
 # Desktop runner build artifacts
 desktop_runner/**/dist/
 desktop_runner/**/build/
+
+# desktop/ (.exe) build
+desktop/.build-venv/
+desktop/build/
+desktop/dist/

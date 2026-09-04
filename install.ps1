@@ -8,9 +8,11 @@
     into it.
 
     This avoids two common Windows problems:
-      * a broken / embedded Python early on PATH (e.g. one shipped inside QGIS or
-        the Microsoft Store stub) that cannot create a working venv
-        ("ModuleNotFoundError: No module named 'encodings'");
+      * a broken / embedded Python early on PATH - some bundled interpreters (a
+        GIS suite's Python, the Microsoft Store `python.exe` stub) cannot create
+        a working venv ("ModuleNotFoundError: No module named 'encodings'"). Each
+        candidate is verified by actually building a throwaway venv before use;
+        interpreter path names are not special-cased.
       * long checkout paths - the venv lives at a short location, not under a
         deep project directory.
 
@@ -36,12 +38,21 @@ function Test-UsablePython {
         $resolved = (& $Exe -c "import sys; print(sys.executable)")
     } catch { return $false }
     if ($LASTEXITCODE -ne 0 -or -not $resolved) { return $false }
-    if ($resolved -match 'QGIS' -or $resolved -match '\\WindowsApps\\') { return $false }
-    # Python >= 3.9 and able to build a venv + bootstrap pip.
+    # Python >= 3.9 with the modules a venv needs.
     & $Exe -c "import sys; sys.exit(0 if sys.version_info[:2] >= (3, 9) else 1)"
     if ($LASTEXITCODE -ne 0) { return $false }
     & $Exe -c "import encodings, venv, ensurepip"
-    return ($LASTEXITCODE -eq 0)
+    if ($LASTEXITCODE -ne 0) { return $false }
+    # Behavioural gate: it must actually be able to create a venv. This rejects
+    # embedded / stub interpreters (GIS suites, the Store stub) by what they do,
+    # not by their path.
+    $probe = Join-Path ([System.IO.Path]::GetTempPath()) ("prisma-s-pyprobe-" + [guid]::NewGuid().ToString('N'))
+    try {
+        & $Exe -m venv --without-pip $probe 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0 -and (Test-Path (Join-Path $probe 'pyvenv.cfg')))
+    } finally {
+        if (Test-Path $probe) { Remove-Item -Recurse -Force $probe -ErrorAction SilentlyContinue }
+    }
 }
 
 function Find-Python {
@@ -104,4 +115,5 @@ Write-Host 'Then start the guided wizard with:'
 Write-Host "    & '$prismaExe' wizard"
 Write-Host ''
 Write-Host "Tip: add '$(Join-Path $VenvPath 'Scripts')' to your PATH to call 'prisma-s' directly."
-Write-Host "For higher-fidelity PDF extraction: & '$venvPy' -m pip install `"$repoRoot[fast-pdf]`""
+Write-Host "Desktop GUI: & '$(Join-Path $VenvPath 'Scripts\prisma-s-gui.exe')'"
+Write-Host "Note: prisma-s reads a PDF's text layer only. OCR scanned PDFs externally first (e.g. ocrmypdf)."
