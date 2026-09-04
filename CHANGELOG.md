@@ -7,18 +7,52 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [1.5.1] - 2026-09-02
+## [1.6.0] - 2026-09-02
+
+### Changed - BREAKING
+- **PyMuPDF is removed.** PyMuPDF is AGPL-3.0; dropping it makes every runtime
+  dependency permissively licensed (BSD / MIT / Apache-2.0 / PSF) and unblocks a
+  clean MIT executable.
+  - the `fast-pdf` and `ocr` optional-dependency groups are deleted;
+  - PDF text extraction is **pypdf-only** - no OCR rung, no second PDF library,
+    no per-document escalation. `prisma_s.extract` loses `_extract_pdf_pymupdf`,
+    `_ocr_*`, `_HAVE_FITZ`, `_pdf_library_rungs`;
+  - `run_analysis()` loses `enable_ocr` / `ocr_lang`; the CLI loses `--no-ocr` /
+    `--ocr-lang`; the GUI loses the Enable-OCR controls;
+  - a document with an empty or thin text layer is **flagged**, not repaired:
+    `Run_Metadata` column `Escalated` -> `Needs OCR`; statuses are
+    `"no text layer - OCR externally and re-run"` / `"thin text - verify
+    extraction"`; `run_metadata.json` drops `ocr_enabled` / `ocr_available` /
+    `escalated_documents` and adds `documents_needing_ocr`.
+  - **Scanned / image-only PDFs must be OCR'd with an external tool (e.g.
+    `ocrmypdf`) before analysis.**
 
 ### Added
 - `prisma-s-gui` - a Tkinter desktop GUI over `run_analysis`: pick a corpus
   (local folder, file/zip, or Google Drive), an output folder, a keyword
-  dictionary, and the figure / OCR / citation toggles, then watch the log.
-  Ships with the pip package; also the front-end of the standalone Windows
-  executable.
-- `desktop/` - a PyInstaller `--onedir` build of the package
-  (`desktop/build_exe.ps1`, `desktop/prisma-s.spec`) and a
-  `.github/workflows/build-exe.yml` that attaches the zipped build to a
-  `v*` tag's GitHub Release.
+  dictionary, and the figure / citation toggles, then watch the log. Ships with
+  the pip package; also the front-end of the standalone Windows executable.
+- `desktop/` - a PyInstaller `--onedir` build (`desktop/build_exe.ps1`,
+  `desktop/prisma-s.spec`) with no copyleft components, plus
+  `desktop/build-exe.workflow.yml` (a GitHub Actions workflow, kept outside
+  `.github/` - see `desktop/README.md`) that attaches the zipped build to a
+  `v*` tag's Release.
+- WRI data-policy / provenance files: `THIRD_PARTY_NOTICES.md`,
+  `DEPENDENCY_LICENSES.csv`, `DATA_PROVENANCE.csv`.
+
+### Changed
+- `prisma_s/data/DATA_LICENSE.md` no longer asserts CC BY 4.0 over the
+  WRI-guidebook-derived `keyword_dictionary_v1.3.csv` and protocol specs - their
+  licence is **pending** confirmation of the guidebook's own licence on
+  publication (co-authored WRI publications are frequently All Rights Reserved).
+  Only the project's own `keyword_dictionary_v1.1.csv`, `citation/*.md`,
+  generated figures and `docs/` remain CC BY 4.0.
+- `citation/{en,pt_br,es}.md` gain a "Data & attribution policy" section
+  (WRI Open Data Commitment / Permissions & Licensing / Data Platforms ToS, and
+  the "state that modifications were made" requirement).
+- `install.ps1` verifies a candidate interpreter by **building a throwaway
+  venv**, instead of rejecting it because its path string contained "QGIS" or
+  "WindowsApps".
 
 ---
 
