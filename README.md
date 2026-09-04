@@ -109,19 +109,39 @@ prisma_s/
 
 ## License
 
-The **source code** is released under the [MIT License](LICENSE). The **keyword
-dictionary, protocol specification, generated figures, and documentation** are
-released under [Creative Commons Attribution 4.0](LICENSE-CC-BY-4.0.txt)
-(see [prisma_s/data/DATA_LICENSE.md](prisma_s/data/DATA_LICENSE.md)) — reuse and
-adaptation are welcome **provided you cite the original tool and publication**.
+- **Source code** — [MIT License](LICENSE).
+- **Generated figures, documentation, `citation/*.md`, and
+  `keyword_dictionary_v1.1.csv`** — [Creative Commons Attribution 4.0](LICENSE-CC-BY-4.0.txt);
+  reuse and adaptation welcome **provided you cite the tool and publication**.
+- **`keyword_dictionary_v1.3.csv` and the protocol specification** — adapted from
+  the World Resources Institute guidebook (below). **Licence pending** the
+  guidebook's own licence on publication.
+
+Full detail: [prisma_s/data/DATA_LICENSE.md](prisma_s/data/DATA_LICENSE.md),
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md),
+[DATA_PROVENANCE.csv](DATA_PROVENANCE.csv).
+
+## Attribution & WRI data policy
+
+The keyword taxonomy and method are based on a World Resources Institute
+publication. This project follows WRI's data policies —
+[Open Data Commitment](https://www.wri.org/data/open-data-commitment),
+[Permissions & Licensing](https://www.wri.org/research/permissions-licensing),
+[Data Platforms ToS](https://www.wri.org/about/wri-data-platforms-tos). Where WRI
+material is used under CC BY 4.0, attribution credits the work as shown on its
+wri.org page, links back to it, and states that modifications were made. WRI
+notes that co-authored publications may be "All Rights Reserved"; the guidebook
+is co-authored, so its licence — and the licence of the two derived files above —
+is treated as **pending** until confirmed. Datasets named in the guidebook may
+carry their own per-dataset terms (some non-commercial).
 
 ## How to cite / Como citar / Cómo citar
 
 Run `prisma-s cite` for this text in all three languages; it is also printed
 when a run finishes and written to `HOW_TO_CITE.txt`.
 
-**The tool** — Wielgosz, B. (2026). *PRISMA-S Lit Review* (Version 1.4)
-[Computer software]. https://github.com/wielgosz/PRISMA_S_Lit_Report
+**The tool** — Wielgosz, B. (2026). *PRISMA-S Lit Review* [Computer software].
+https://github.com/wielgosz/PRISMA_S_Lit_Report
 
 **The associated publication** — Wielgosz, B., dos Santos, A. B., Carter, S.,
 Berger, A., Schneider, M., Despontin, M., Immelman, J., Richter, J., Couto, A.,
