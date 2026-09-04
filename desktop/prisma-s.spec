@@ -58,8 +58,9 @@ _CRITICAL_DLL_GLOBS = (
     "lzma*.dll", "libcrypto*.dll", "libssl*.dll", "sqlite3*.dll", "libsqlite3*.dll",
     "zlib*.dll", "libexpat*.dll", "tcl86*.dll", "tk86*.dll", "libffi-*.dll",
 )
+_DLL_DIRS = [d for d in os.environ.get("PRISMA_S_DLL_DIRS", "").split(";") if d]
 _bundled = set()
-for _dir in filter(None, os.environ.get("PRISMA_S_DLL_DIRS", "").split(";")):
+for _dir in _DLL_DIRS:
     for _pat in _CRITICAL_DLL_GLOBS:
         for _dll in glob.glob(os.path.join(_dir, _pat)):
             _key = os.path.basename(_dll).lower()
@@ -72,11 +73,17 @@ EXCLUDES = [
     "tkinter.test", "test",
 ]
 
+# desktop/build_exe.ps1 passes the interpreter's DLL directories here (a
+# makespec `--paths` is rejected when running a .spec, so it must live in the
+# spec). Helps PyInstaller's dependency scan resolve ffi.dll / libbz2.dll /
+# tcl86t.dll on Conda and other non-standard layouts.
+PATHEX = [REPO] + [d for d in _DLL_DIRS if os.path.isdir(d)]
+
 
 def _analysis(script):
     return Analysis(  # noqa: F821
         [os.path.join(DESKTOP_DIR, script)],
-        pathex=[REPO],
+        pathex=PATHEX,
         binaries=binaries,
         datas=datas,
         hiddenimports=hiddenimports,

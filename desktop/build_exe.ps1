@@ -151,19 +151,20 @@ foreach ($line in $probeOut) {
     }
     Write-Host "  $line"
 }
+# The .spec reads PRISMA_S_DLL_DIRS: it adds them to Analysis(pathex=...) and
+# force-bundles a critical-DLL allowlist from them. (`--paths` on the command
+# line is a makespec-only option and is rejected when a .spec is given.)
 if ($dllDirs) {
     $env:PATH = ($dllDirs -join ';') + ';' + $env:PATH
-    $env:PRISMA_S_DLL_DIRS = ($dllDirs -join ';')   # the spec force-bundles a critical allowlist from these
-    Write-Host "Prepended $($dllDirs.Count) DLL dir(s) to PATH for the build."
+    $env:PRISMA_S_DLL_DIRS = ($dllDirs -join ';')
+    Write-Host "Prepended $($dllDirs.Count) DLL dir(s) to PATH and PRISMA_S_DLL_DIRS for the build."
 }
-$pathArgs = @()
-foreach ($d in $dllDirs) { $pathArgs += @('--paths', $d) }
 
 # --- build (always with the CLI, for the selftest) --------------------
 $env:PRISMA_S_BUILD_CLI = '1'
 Push-Location $repoRoot
 try {
-    & $venvPy -m PyInstaller --clean --noconfirm @pathArgs (Join-Path $PSScriptRoot 'prisma-s.spec')
+    & $venvPy -m PyInstaller --clean --noconfirm (Join-Path $PSScriptRoot 'prisma-s.spec')
     if ($LASTEXITCODE -ne 0) { Write-Error "PyInstaller failed (exit $LASTEXITCODE)."; exit 1 }
 } finally { Pop-Location }
 
