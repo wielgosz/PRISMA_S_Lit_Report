@@ -97,7 +97,46 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Language to print (default: all).",
     )
 
+    # Undocumented: end-to-end import + render check, used by the desktop build
+    # script to fail a broken PyInstaller bundle at build time.
+    sub.add_parser("selftest")
+
     return parser
+
+
+def _cmd_selftest() -> None:
+    """Exercise every dependency a real run touches; raise on the first failure."""
+    import ctypes  # noqa: F401  - the DLL that breaks a bad conda bundle
+    import tempfile
+    from pathlib import Path
+
+    import openpyxl  # noqa: F401
+    import pandas as pd
+    import pypdf  # noqa: F401
+    from docx import Document  # noqa: F401
+
+    from .citation import all_citations
+    from .figures import generate_figures
+    from .keywords import load_keywords
+
+    kw = load_keywords(None)  # bundled v1.3 via importlib.resources
+    assert kw.is_registry and kw.n_canonical == 98, f"bundled dict wrong: {kw.n_canonical}"
+    assert "World Resources Institute" in all_citations()
+
+    with tempfile.TemporaryDirectory() as td:
+        ts = pd.DataFrame(
+            {
+                "category": ["Jurisdictional terms", "Supply chain terms", "Farm level terms"],
+                "term": ["area", "supplier", "farm"],
+                "number of reports referencing term": [10, 7, 5],
+                "include_in_visuals": ["yes", "yes", "yes"],
+            }
+        )
+        made = generate_figures(ts, Path(td) / "figures")
+        assert made, "generate_figures produced nothing"
+
+    print("selftest OK - ctypes, importlib.resources, pandas, openpyxl, pypdf, "
+          "python-docx, matplotlib figures all import and run.")
 
 
 def _cmd_run(args: argparse.Namespace) -> None:
@@ -142,6 +181,8 @@ def main() -> None:
             _cmd_run(args)
         elif args.command == "cite":
             _cmd_cite(args)
+        elif args.command == "selftest":
+            _cmd_selftest()
     except (KeyboardInterrupt, EOFError):
         print("\nCancelled.", file=sys.stderr)
         sys.exit(130)

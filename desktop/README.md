@@ -12,15 +12,36 @@ From the repository root, on Windows:
 powershell -ExecutionPolicy Bypass -File desktop\build_exe.ps1 -WithCli -Zip
 ```
 
-- `-WithCli` also puts a console `prisma-s.exe` inside the onedir folder
-  (used for the acceptance diff; handy for scripting).
+- `-WithCli` keeps the console `prisma-s.exe` in the onedir (it is always built
+  for the self-test; without this switch it is deleted afterwards).
 - `-Zip` also writes `dist\PRISMA-S-Lit-Review-<version>-win64.zip`.
+- `-Python <path>` builds with a specific interpreter, skipping auto-discovery.
 
 Output: `dist\PRISMA-S-Lit-Review\` — run `PRISMA-S-Lit-Review.exe`.
 
-The script builds in an isolated venv (`desktop\.build-venv`), installs
-`.[dev]` + PyInstaller, and runs `desktop\prisma-s.spec`. It **aborts** if
-PyMuPDF is present in the build venv.
+### How it adapts to your Python
+
+The script works with **any** Windows Python 3.9+ distribution — python.org,
+pyenv-win, Miniconda / Anaconda:
+
+1. It ranks the interpreters it can find (preferring a python.org / pyenv
+   layout), and proves each one usable by *actually building a throwaway venv*.
+2. After installing the deps it runs `desktop\_pyenv_probe.py` to ask that
+   interpreter **where its native DLLs live** (`ffi.dll` for `_ctypes`,
+   `libbz2.dll`, `tcl86t.dll`, …). Conda keeps these in `…\Library\bin`;
+   python.org keeps them in `…\DLLs`. Those directories are put on `PATH` for
+   the build and passed to PyInstaller as `--paths`; the spec also force-bundles
+   a small critical-DLL allowlist from them.
+3. It then runs `prisma-s.exe selftest` inside the finished bundle — importing
+   `ctypes`, `importlib.resources`, pandas, openpyxl, pypdf, python-docx, and
+   rendering a matplotlib figure. **A bundle missing a DLL fails here, at build
+   time, with the DLL named** — not when you double-click the GUI.
+
+It **aborts** if PyMuPDF is present in the build venv (it must not be bundled).
+
+If discovery still lands on a broken interpreter, pass `-Python` explicitly or,
+for Conda, run the build from an **Anaconda Prompt** (so `Library\bin` is
+already on `PATH`).
 
 ### CI (one-time setup)
 

@@ -7,6 +7,7 @@
 # PyMuPDF / OCR. Whatever is installed in the build venv is bundled -- keep that
 # venv to `pip install -e ".[dev]"` + pyinstaller only.
 
+import glob
 import os
 
 from PyInstaller.utils.hooks import collect_all, collect_data_files, copy_metadata
@@ -46,6 +47,25 @@ for name in (
     p = os.path.join(REPO, name)
     if os.path.exists(p):
         datas.append((p, "."))
+
+# Backstop: force-bundle the native DLLs behind Python's C extensions from the
+# directories desktop/build_exe.ps1 discovered (PRISMA_S_DLL_DIRS). PyInstaller
+# normally finds these via PATH, but on Conda / non-standard layouts the
+# critical ones can be missed -- an unresolved ffi.dll breaks _ctypes and the
+# whole app. Only a short allowlist, so we don't drag in all of Conda's Library\bin.
+_CRITICAL_DLL_GLOBS = (
+    "ffi*.dll", "libffi*.dll", "libbz2*.dll", "bz2*.dll", "liblzma*.dll",
+    "lzma*.dll", "libcrypto*.dll", "libssl*.dll", "sqlite3*.dll", "libsqlite3*.dll",
+    "zlib*.dll", "libexpat*.dll", "tcl86*.dll", "tk86*.dll", "libffi-*.dll",
+)
+_bundled = set()
+for _dir in filter(None, os.environ.get("PRISMA_S_DLL_DIRS", "").split(";")):
+    for _pat in _CRITICAL_DLL_GLOBS:
+        for _dll in glob.glob(os.path.join(_dir, _pat)):
+            _key = os.path.basename(_dll).lower()
+            if _key not in _bundled and os.path.isfile(_dll):
+                binaries.append((_dll, "."))
+                _bundled.add(_key)
 
 EXCLUDES = [
     "PyQt5", "PyQt6", "PySide2", "PySide6", "IPython", "pytest", "notebook",

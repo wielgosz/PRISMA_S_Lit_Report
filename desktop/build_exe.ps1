@@ -3,17 +3,30 @@
     Build the standalone PRISMA-S Lit Review Windows executable (PyInstaller onedir).
 
 .DESCRIPTION
-    Creates an isolated build venv under desktop\.build-venv, installs the
-    package (`pip install -e ".[dev]"`) plus PyInstaller, and runs
-    desktop\prisma-s.spec. The result is dist\PRISMA-S-Lit-Review\.
+    1. Finds a usable Python (or takes -Python <path>), preferring a python.org /
+       pyenv layout over Conda over anything embedded. "Usable" is proven by
+       actually building a throwaway venv.
+    2. Creates an isolated build venv (desktop\.build-venv) and installs
+       `.[dev]` + PyInstaller.
+    3. Asks that interpreter where its native DLLs live (desktop\_pyenv_probe.py)
+       and prepends those directories to PATH + passes them to PyInstaller. This
+       makes Conda / non-standard layouts work: ffi.dll (_ctypes), libbz2.dll
+       (_bz2), tcl86t/tk86t.dll (_tkinter) resolve wherever they are.
+    4. Builds, then runs `prisma-s.exe selftest` inside the bundle - imports
+       ctypes, importlib.resources, pandas, openpyxl, pypdf, python-docx and
+       renders a matplotlib figure. A broken bundle fails HERE with the missing
+       DLL named, not when a user double-clicks the GUI.
 
     No copyleft components are bundled: PDF text extraction is pypdf only, there
-    is no PyMuPDF / OCR. The distributable is MIT (code) with CC BY 4.0 data/docs
-    (see THIRD_PARTY_NOTICES.md and prisma_s\data\DATA_LICENSE.md).
+    is no PyMuPDF / OCR.
+
+.PARAMETER Python
+    Explicit interpreter to build with (e.g. C:\Python312\python.exe). Skips
+    auto-discovery.
 
 .PARAMETER WithCli
-    Also emit a console prisma-s.exe inside the onedir (used for the acceptance
-    diff; optional for end users).
+    Keep the console prisma-s.exe in the onedir. (It is always built for the
+    selftest; without this switch it is deleted afterwards.)
 
 .PARAMETER Zip
     Also produce dist\PRISMA-S-Lit-Review-<version>-win64.zip.
@@ -21,63 +34,95 @@
 .NOTES
     Run from the repository root:
         powershell -ExecutionPolicy Bypass -File desktop\build_exe.ps1 -WithCli -Zip
+    No administrator rights required.
 #>
 [CmdletBinding()]
 param(
+    [string] $Python,
     [switch] $WithCli,
     [switch] $Zip
 )
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = Split-Path -Parent $PSScriptRoot
-$venvPath = Join-Path $PSScriptRoot '.build-venv'
+$repoRoot  = Split-Path -Parent $PSScriptRoot
+$venvPath  = Join-Path $PSScriptRoot '.build-venv'
+$probe     = Join-Path $PSScriptRoot '_pyenv_probe.py'
 
-function Test-UsablePython {
+function Test-CanBuildVenv {
     param([string] $Exe)
-    if (-not $Exe) { return $false }
-    try { $null = (& $Exe -c "import sys; print(sys.executable)") } catch { return $false }
+    if (-not $Exe -or -not (Test-Path $Exe)) { return $false }
+    try { $null = (& $Exe -c 'import sys' 2>$null) } catch { return $false }
     if ($LASTEXITCODE -ne 0) { return $false }
-    & $Exe -c "import sys; sys.exit(0 if sys.version_info[:2] >= (3, 9) else 1)"
+    & $Exe -c 'import sys; sys.exit(0 if sys.version_info[0:2] >= (3, 9) else 1)' 2>$null
     if ($LASTEXITCODE -ne 0) { return $false }
-    & $Exe -c "import encodings, venv, ensurepip"
+    & $Exe -c 'import encodings, venv, ensurepip' 2>$null
     if ($LASTEXITCODE -ne 0) { return $false }
-    $probe = Join-Path ([System.IO.Path]::GetTempPath()) ("prisma-s-pyprobe-" + [guid]::NewGuid().ToString('N'))
+    $t = Join-Path ([System.IO.Path]::GetTempPath()) ("pyprobe-" + [guid]::NewGuid().ToString('N'))
     try {
-        & $Exe -m venv --without-pip $probe 2>$null | Out-Null
-        return ($LASTEXITCODE -eq 0 -and (Test-Path (Join-Path $probe 'pyvenv.cfg')))
-    } finally {
-        if (Test-Path $probe) { Remove-Item -Recurse -Force $probe -ErrorAction SilentlyContinue }
-    }
+        & $Exe -m venv --without-pip $t 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0 -and (Test-Path (Join-Path $t 'pyvenv.cfg')))
+    } finally { if (Test-Path $t) { Remove-Item -Recurse -Force $t -ErrorAction SilentlyContinue } }
+}
+
+function Get-PyRank {
+    # Lower is better. python.org / pyenv layout (DLLs\ present, no conda-meta) wins.
+    param([string] $Exe)
+    try { $prefix = (& $Exe -c "import sys; print(sys.base_prefix)" 2>$null).Trim() } catch { return 9 }
+    if (-not $prefix) { return 9 }
+    $isConda = Test-Path (Join-Path $prefix 'conda-meta')
+    $hasDLLs = Test-Path (Join-Path $prefix 'DLLs')
+    if (-not $isConda -and $hasDLLs) { return 0 }   # python.org / pyenv
+    if ($isConda)                    { return 2 }   # conda - works, DLL dirs injected
+    return 1                                         # other non-conda
 }
 
 function Find-Python {
-    $candidates = @()
+    $cands = New-Object System.Collections.Generic.List[string]
     if (Get-Command py -ErrorAction SilentlyContinue) {
-        foreach ($v in @('-3.13', '-3.12', '-3.11', '-3.10', '-3.9', '-3')) {
-            try { $p = (& py $v -c "import sys; print(sys.executable)") } catch { $p = $null }
-            if ($LASTEXITCODE -eq 0 -and $p) { $candidates += $p }
+        foreach ($v in '-3.13','-3.12','-3.11','-3.10','-3.9','-3') {
+            try { $p = (& py $v -c "import sys; print(sys.executable)" 2>$null) } catch { $p = $null }
+            if ($LASTEXITCODE -eq 0 -and $p) { $cands.Add($p.Trim()) }
         }
     }
-    foreach ($name in @('python3', 'python')) {
-        $c = Get-Command $name -ErrorAction SilentlyContinue
-        if ($c) { $candidates += $c.Source }
+    foreach ($n in 'python','python3') {
+        $c = Get-Command $n -ErrorAction SilentlyContinue
+        if ($c) { $cands.Add($c.Source) }
     }
-    $candidates += (Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe" -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
-    $candidates += @(
-        (Join-Path $env:ProgramData 'miniconda3\python.exe'),
-        (Join-Path $env:LOCALAPPDATA 'miniconda3\python.exe')
-    )
-    foreach ($c in ($candidates | Select-Object -Unique)) {
-        if ((Test-Path $c) -and (Test-UsablePython $c)) { return $c }
-    }
-    return $null
+    Get-ChildItem "$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe" -ErrorAction SilentlyContinue |
+        ForEach-Object { $cands.Add($_.FullName) }
+    Get-ChildItem "C:\Python3*\python.exe" -ErrorAction SilentlyContinue |
+        ForEach-Object { $cands.Add($_.FullName) }
+    $cands.Add((Join-Path $env:ProgramData 'miniconda3\python.exe'))
+    $cands.Add((Join-Path $env:ProgramData 'anaconda3\python.exe'))
+    $cands.Add((Join-Path $env:LOCALAPPDATA 'miniconda3\python.exe'))
+    $cands.Add((Join-Path $env:LOCALAPPDATA 'anaconda3\python.exe'))
+
+    $usable = $cands | Select-Object -Unique | Where-Object { Test-CanBuildVenv $_ }
+    if (-not $usable) { return $null }
+    return ($usable | Sort-Object { Get-PyRank $_ } | Select-Object -First 1)
 }
 
-Write-Host 'Looking for a usable Python 3.9+ interpreter...'
-$python = Find-Python
-if (-not $python) { Write-Error 'No usable Python 3.9+ found. Install python.org build and retry.'; exit 1 }
-Write-Host "Using: $python"
+# --- pick the interpreter --------------------------------------------------
+if ($Python) {
+    if (-not (Test-CanBuildVenv $Python)) { Write-Error "-Python '$Python' cannot build a venv (needs 3.9+ with venv/ensurepip)."; exit 1 }
+    $python = $Python
+} else {
+    Write-Host 'Looking for a usable Python 3.9+ interpreter...'
+    $python = Find-Python
+    if (-not $python) {
+        Write-Error @'
+No usable Python 3.9+ found. Install the official build from
+https://www.python.org/downloads/windows/ (tick "Add python.exe to PATH"),
+open a new terminal, and re-run - or pass -Python <path> explicitly.
+'@
+        exit 1
+    }
+}
+$rank = Get-PyRank $python
+$flavour = @{ 0 = 'python.org / pyenv layout'; 1 = 'non-standard layout'; 2 = 'Conda (DLL dirs will be injected)' }[$rank]
+Write-Host "Using: $python  [$flavour]"
 
+# --- build venv + deps ---------------------------------------------------
 if (-not (Test-Path $venvPath)) {
     & $python -m venv $venvPath
     if ($LASTEXITCODE -ne 0) { Write-Error "venv creation failed (exit $LASTEXITCODE)."; exit 1 }
@@ -89,29 +134,70 @@ Write-Host 'Installing package + PyInstaller into the build venv...'
 & $venvPy -m pip install --upgrade --force-reinstall "$repoRoot[dev]" "pyinstaller>=6.0"
 if ($LASTEXITCODE -ne 0) { Write-Error "pip install failed (exit $LASTEXITCODE)."; exit 1 }
 
-# Guard: the build must not pick up an AGPL PDF engine.
+# Guard: never bundle an AGPL PDF engine.
 & $venvPy -c "import importlib.util,sys; sys.exit(1 if importlib.util.find_spec('fitz') or importlib.util.find_spec('pymupdf') else 0)"
 if ($LASTEXITCODE -ne 0) {
-    Write-Error 'PyMuPDF is present in the build venv. Remove it (pip uninstall PyMuPDF) - v1.6.0 ships pypdf-only and must not bundle AGPL code.'
+    Write-Error 'PyMuPDF is present in the build venv. Run: & "$venvPy" -m pip uninstall -y PyMuPDF pymupdf'
     exit 1
 }
 
-if ($WithCli) { $env:PRISMA_S_BUILD_CLI = '1' } else { Remove-Item Env:\PRISMA_S_BUILD_CLI -ErrorAction SilentlyContinue }
+# --- probe the interpreter for its DLL directories ---------------------
+Write-Host 'Probing interpreter for native DLL directories...'
+$probeOut = & $venvPy -X utf8 $probe
+$dllDirs = @()
+foreach ($line in $probeOut) {
+    if ($line -like 'dll_dirs=*') {
+        $dllDirs = ($line.Substring(9) -split ';') | Where-Object { $_ }
+    }
+    Write-Host "  $line"
+}
+if ($dllDirs) {
+    $env:PATH = ($dllDirs -join ';') + ';' + $env:PATH
+    $env:PRISMA_S_DLL_DIRS = ($dllDirs -join ';')   # the spec force-bundles a critical allowlist from these
+    Write-Host "Prepended $($dllDirs.Count) DLL dir(s) to PATH for the build."
+}
+$pathArgs = @()
+foreach ($d in $dllDirs) { $pathArgs += @('--paths', $d) }
 
+# --- build (always with the CLI, for the selftest) --------------------
+$env:PRISMA_S_BUILD_CLI = '1'
 Push-Location $repoRoot
 try {
-    & $venvPy -m PyInstaller --clean --noconfirm (Join-Path $PSScriptRoot 'prisma-s.spec')
+    & $venvPy -m PyInstaller --clean --noconfirm @pathArgs (Join-Path $PSScriptRoot 'prisma-s.spec')
     if ($LASTEXITCODE -ne 0) { Write-Error "PyInstaller failed (exit $LASTEXITCODE)."; exit 1 }
-} finally {
-    Pop-Location
-}
+} finally { Pop-Location }
 
 $distDir = Join-Path $repoRoot 'dist\PRISMA-S-Lit-Review'
+$cliExe  = Join-Path $distDir 'prisma-s.exe'
+
+# --- verify the artifact ---------------------------------------------
+Write-Host ''
+Write-Host 'Verifying the built bundle (prisma-s.exe selftest)...'
+$out = & $cliExe selftest 2>&1
+$ok = ($LASTEXITCODE -eq 0)
+$out | ForEach-Object { Write-Host "  $_" }
+if (-not $ok) {
+    Write-Error @"
+The built executable is broken - the bundle is missing a native DLL or data
+file (see the error above; a 'DLL load failed while importing _ctypes' means
+ffi.dll was not found). This usually means the build Python's DLL directories
+were not discovered. Try: -Python <a python.org install>, or open an
+'Anaconda Prompt' (so Conda's Library\bin is on PATH) and re-run.
+"@
+    exit 1
+}
+& $cliExe --version | ForEach-Object { Write-Host "  $_" }
+
+if (-not $WithCli) {
+    Remove-Item $cliExe -Force
+    Write-Host 'Removed prisma-s.exe (pass -WithCli to keep it).'
+}
+
 $sizeMB = [math]::Round((Get-ChildItem $distDir -Recurse | Measure-Object Length -Sum).Sum / 1MB, 0)
 Write-Host ''
-Write-Host "Built: $distDir  (~$sizeMB MB)"
+Write-Host "Built OK: $distDir  (~$sizeMB MB)"
 Write-Host "  GUI: $distDir\PRISMA-S-Lit-Review.exe"
-if ($WithCli) { Write-Host "  CLI: $distDir\prisma-s.exe" }
+if ($WithCli) { Write-Host "  CLI: $cliExe" }
 
 if ($Zip) {
     $version = (& $venvPy -c "import prisma_s; print(prisma_s.__version__)").Trim()

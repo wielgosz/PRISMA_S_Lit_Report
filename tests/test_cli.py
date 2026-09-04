@@ -58,3 +58,12 @@ def test_cite_lang(capsys):
     cli.main()
     out = capsys.readouterr().out
     assert "Como citar" in out and "World Resources Institute" in out
+
+
+def test_selftest_runs(capsys):
+    """The build-verification subcommand imports every runtime dep and renders."""
+    import sys
+
+    sys.argv = ["prisma-s", "selftest"]
+    cli.main()  # raises SystemExit only on failure
+    assert "selftest OK" in capsys.readouterr().out
