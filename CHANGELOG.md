@@ -36,7 +36,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `desktop/prisma-s.spec`) with no copyleft components, plus
   `desktop/build-exe.workflow.yml` (a GitHub Actions workflow, kept outside
   `.github/` - see `desktop/README.md`) that attaches the zipped build to a
-  `v*` tag's Release.
+  `v*` tag's Release. The build script adapts to any Windows Python distro
+  (python.org, pyenv-win, Miniconda/Anaconda): it probes the chosen interpreter
+  for its native DLL directories (`desktop/_pyenv_probe.py`) so `_ctypes` /
+  `_bz2` / `_tkinter` resolve wherever the distro puts `ffi.dll` etc., then runs
+  `prisma-s selftest` inside the finished bundle - a missing DLL fails the build
+  with the DLL named, not the user's first launch.
+- `prisma-s selftest` - an undocumented subcommand that imports every runtime
+  dependency and renders a figure; used by the desktop build verification.
 - WRI data-policy / provenance files: `THIRD_PARTY_NOTICES.md`,
   `DEPENDENCY_LICENSES.csv`, `DATA_PROVENANCE.csv`.
 
