@@ -160,6 +160,38 @@ if ($dllDirs) {
     Write-Host "Prepended $($dllDirs.Count) DLL dir(s) to PATH and PRISMA_S_DLL_DIRS for the build."
 }
 
+# --- clear stale build output before PyInstaller does (loudly, with retry) --
+# A previous run's exe (or antivirus, or an open Explorer window) can hold a
+# file in dist\ / build\ locked for a moment. `Remove-Item -ErrorAction
+# SilentlyContinue` would hide that and let PyInstaller's own cleanup fail
+# deep inside COLLECT with a confusing WinError 32. Do it here, loudly.
+function Remove-DirRetry {
+    param([string] $Path, [int] $Retries = 6, [int] $DelayMs = 1000)
+    if (-not (Test-Path $Path)) { return }
+    for ($i = 1; $i -le $Retries; $i++) {
+        try { Remove-Item -Recurse -Force $Path -ErrorAction Stop; return }
+        catch {
+            if ($i -eq $Retries) {
+                Write-Error @"
+Could not remove '$Path' - a file inside it is locked by another process.
+Common causes: the built app (PRISMA-S-Lit-Review.exe / prisma-s.exe) is still
+running - check Task Manager - an Explorer window has that folder open, or
+antivirus is scanning it. Close those and re-run.
+Underlying error: $($_.Exception.Message)
+"@
+                exit 1
+            }
+            Write-Host "  '$Path' is locked, retrying in ${DelayMs}ms... ($i/$Retries)"
+            Start-Sleep -Milliseconds $DelayMs
+        }
+    }
+}
+
+Get-Process -Name 'PRISMA-S-Lit-Review', 'prisma-s' -ErrorAction SilentlyContinue |
+    Stop-Process -Force -ErrorAction SilentlyContinue
+Remove-DirRetry (Join-Path $repoRoot 'dist')
+Remove-DirRetry (Join-Path $repoRoot 'build')
+
 # --- build (always with the CLI, for the selftest) --------------------
 $env:PRISMA_S_BUILD_CLI = '1'
 Push-Location $repoRoot
