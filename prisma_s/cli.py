@@ -90,16 +90,6 @@ def _build_parser() -> argparse.ArgumentParser:
         "--no-citation", action="store_true", dest="no_citation",
         help="Do not print the 'How to cite' block after the run.",
     )
-    run_p.add_argument(
-        "--no-ocr", action="store_true", dest="no_ocr",
-        help="Skip the OCR rung even when Tesseract is installed. By default a "
-             "PDF still textless after pypdf/PyMuPDF is OCR'd (Tesseract required).",
-    )
-    run_p.add_argument(
-        "--ocr-lang", default="eng", dest="ocr_lang",
-        help="Tesseract language code(s) for OCR, e.g. 'eng' or 'eng+por' "
-             "(default: eng).",
-    )
 
     cite_p = sub.add_parser("cite", help="Print the 'How to cite' / attribution text.")
     cite_p.add_argument(
@@ -124,8 +114,6 @@ def _cmd_run(args: argparse.Namespace) -> None:
         drive_token=args.drive_token,
         keyword_csv=args.keywords,
         emit_citation=not args.no_citation,
-        enable_ocr=not args.no_ocr,
-        ocr_lang=args.ocr_lang,
         figures=not args.no_figures,
     )
     print(f"Done - {len(df):,} rows written to {args.output}")

@@ -4,7 +4,7 @@ Desktop GUI for prisma-s (``prisma-s-gui``).
 A single-window Tkinter front-end over :func:`prisma_s.runner.run_analysis`.
 It offers the same run as ``prisma-s run``: pick a corpus (local folder, local
 file/zip, or a Google Drive folder), an output folder, a keyword dictionary, and
-the figure / OCR / citation toggles, then watch the log.
+the figure / citation toggles, then watch the log.
 
 The kwarg-assembly step is the module-level :func:`build_run_kwargs` so it can be
 unit-tested without a display.  The Tk classes are only imported when the GUI is
@@ -39,7 +39,7 @@ def build_run_kwargs(state: dict[str, Any]) -> dict[str, Any]:
     *state* keys: ``source_mode`` (``folder``/``file``/``drive``),
     ``source_path``, ``drive_url``, ``drive_credentials``, ``output_dir``,
     ``batch_id``, ``dict_mode`` (``v13``/``v11``/``custom``),
-    ``custom_dict_path``, ``figures``, ``citation``, ``ocr``, ``ocr_lang``.
+    ``custom_dict_path``, ``figures``, ``citation``.
 
     Raises :class:`ValueError` with a user-facing message on missing/invalid
     input.
@@ -58,8 +58,6 @@ def build_run_kwargs(state: dict[str, Any]) -> dict[str, Any]:
         "output_xlsx": str(out / f"{batch}_results.xlsx"),
         "emit_citation": bool(state.get("citation", True)),
         "figures": bool(state.get("figures", True)),
-        "enable_ocr": bool(state.get("ocr", True)),
-        "ocr_lang": (state.get("ocr_lang") or "eng").strip() or "eng",
     }
 
     mode = state.get("source_mode", "folder")
@@ -122,8 +120,6 @@ def _run_app() -> int:
     custom_dict = tk.StringVar()
     want_figures = tk.BooleanVar(value=True)
     want_citation = tk.BooleanVar(value=True)
-    want_ocr = tk.BooleanVar(value=True)
-    ocr_lang = tk.StringVar(value="eng")
 
     row = 0
     ttk.Label(frm, text="Corpus source", font=("Segoe UI", 10, "bold")).grid(
@@ -210,9 +206,6 @@ def _run_app() -> int:
     opts.grid(row=row, column=0, columnspan=3, sticky="w", **pad)
     ttk.Checkbutton(opts, text="Generate figures", variable=want_figures).pack(side="left", padx=6)
     ttk.Checkbutton(opts, text="Print citation", variable=want_citation).pack(side="left", padx=6)
-    ttk.Checkbutton(opts, text="Enable OCR", variable=want_ocr).pack(side="left", padx=6)
-    ttk.Label(opts, text="OCR lang").pack(side="left", padx=(12, 2))
-    ttk.Entry(opts, textvariable=ocr_lang, width=10).pack(side="left")
     row += 1
 
     progress = ttk.Progressbar(frm, mode="indeterminate")
@@ -263,8 +256,6 @@ def _run_app() -> int:
             "custom_dict_path": custom_dict.get(),
             "figures": want_figures.get(),
             "citation": want_citation.get(),
-            "ocr": want_ocr.get(),
-            "ocr_lang": ocr_lang.get(),
         }
 
     def worker(kwargs: dict[str, Any]) -> None:

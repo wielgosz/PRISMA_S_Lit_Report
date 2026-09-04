@@ -85,42 +85,41 @@ def test_corrupt_pdf_counted_as_skipped(tmp_path, make_docx):
     assert meta["documents_skipped"] == 1
 
 
-def test_run_metadata_has_escalated_column_and_backend_counts(tmp_path, make_docx):
-    make_docx("Coffee and Cocoa", name="a.docx")
+def test_run_metadata_has_needs_ocr_column_and_backend_counts(tmp_path, make_docx):
+    make_docx("Coffee and Cocoa " * 40, name="a.docx")
     out = tmp_path / "r.xlsx"
     run_analysis("b", out, input_path=tmp_path,
                  keyword_csv=_kw(tmp_path, ("C", "Coffee")), emit_citation=False)
     meta = pd.read_excel(out, sheet_name="Run_Metadata")
-    assert "Escalated" in meta.columns
-    assert meta.loc[0, "Escalated"] in (False, 0)
+    assert "Needs OCR" in meta.columns and "Escalated" not in meta.columns
+    assert meta.loc[0, "Needs OCR"] in (False, 0)
     summary = json.loads((out.parent / "run_metadata.json").read_text())
     assert summary["backend_counts"].get("python-docx") == 1
-    assert summary["ocr_enabled"] is True
-    assert summary["escalated_documents"] == []
+    assert summary["documents_needing_ocr"] == []
+    assert "ocr_enabled" not in summary and "escalated_documents" not in summary
 
 
-def test_escalation_surfaces_in_run_metadata(tmp_path, monkeypatch, make_pdf):
+def test_textless_pdf_surfaces_as_needs_ocr(tmp_path, monkeypatch, make_pdf):
     import prisma_s.extract as extract
 
-    pdf = make_pdf(["one two three"], name="thin.pdf")
+    make_pdf(["one two three"], name="scan.pdf")
 
-    def fake_pdf(path, *, enable_ocr=True, ocr_lang="eng"):
+    def fake_text(path):
         return extract.ExtractResult(
-            full_text="Coffee " * 10, first_text="Coffee", metadata={}, pages=60,
-            backend="pypdf", escalated=True, chain="pymupdf 3w -> pypdf 10w",
+            full_text="", first_text="", metadata={}, pages=12,
+            backend="pypdf", thin=True, chain="pypdf 0w",
         )
 
-    monkeypatch.setattr(extract, "extract_pdf", fake_pdf)
-    monkeypatch.setattr("prisma_s.runner.extract_text",
-                        lambda p, **k: fake_pdf(p, **k) if p.suffix == ".pdf" else None)
+    monkeypatch.setattr("prisma_s.runner.extract_text", fake_text)
     out = tmp_path / "r.xlsx"
     run_analysis("b", out, input_path=tmp_path,
                  keyword_csv=_kw(tmp_path, ("C", "Coffee")), emit_citation=False)
     meta = pd.read_excel(out, sheet_name="Run_Metadata")
-    row = meta[meta["Document Name"] == "thin.pdf"].iloc[0]
-    assert bool(row["Escalated"]) is True
-    assert "escalated" in row["Status"]
-    assert json.loads((out.parent / "run_metadata.json").read_text())["escalated_documents"] == ["thin.pdf"]
+    row = meta[meta["Document Name"] == "scan.pdf"].iloc[0]
+    assert bool(row["Needs OCR"]) is True
+    assert "OCR" in row["Status"]
+    summary = json.loads((out.parent / "run_metadata.json").read_text())
+    assert summary["documents_needing_ocr"] == ["scan.pdf"]
 
 
 def test_repeated_runs_are_byte_stable(tmp_path, make_pdf):

@@ -1,10 +1,15 @@
 # PRISMA-Aligned Keyword Corpus Review Protocol v1.1
 
 ## Overview
-This protocol describes a PRISMA-aligned, reproducible full-text keyword review of OCR-enabled PDF documents.
+This protocol describes a PRISMA-aligned, reproducible full-text keyword review
+of text-based PDF and DOCX documents.
 
 ## Corpus Assumptions
-- Input files are OCR-text PDFs
+- Input PDFs must carry a real text layer. prisma-s reads that layer with pypdf;
+  it does **not** perform OCR. A scanned or image-only PDF must be OCR'd with an
+  external tool (for example `ocrmypdf`) **before** analysis. Every document with
+  no text, or with too little text for its page count, is flagged in
+  `Run_Metadata` / `run_metadata.json` (`Needs OCR` / `documents_needing_ocr`).
 - One PDF = one analytical document unit
 - English-language documents unless otherwise specified
 

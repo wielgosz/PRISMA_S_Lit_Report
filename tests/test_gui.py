@@ -21,8 +21,6 @@ def base_state(tmp_path):
         "custom_dict_path": "",
         "figures": True,
         "citation": True,
-        "ocr": True,
-        "ocr_lang": "eng",
     }
 
 
@@ -32,8 +30,8 @@ def test_defaults_map_to_run_analysis(base_state, tmp_path):
     assert k["output_xlsx"] == str(tmp_path / "batch_01_results.xlsx")
     assert k["keyword_csv"] is None  # bundled v1.3
     assert k["input_path"] == base_state["source_path"]
-    assert k["figures"] is True and k["enable_ocr"] is True
-    assert k["emit_citation"] is True and k["ocr_lang"] == "eng"
+    assert k["figures"] is True and k["emit_citation"] is True
+    assert "enable_ocr" not in k and "ocr_lang" not in k
 
 
 def test_dictionary_radio_maps(base_state):
@@ -86,8 +84,5 @@ def test_missing_corpus_raises(base_state):
 
 
 def test_toggles_thread_through(base_state):
-    k = gui.build_run_kwargs(
-        {**base_state, "figures": False, "citation": False, "ocr": False, "ocr_lang": ""}
-    )
+    k = gui.build_run_kwargs({**base_state, "figures": False, "citation": False})
     assert k["figures"] is False and k["emit_citation"] is False
-    assert k["enable_ocr"] is False and k["ocr_lang"] == "eng"  # blank -> default

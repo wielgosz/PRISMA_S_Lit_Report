@@ -34,12 +34,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Higher-fidelity PDF text extraction. PyMuPDF is AGPL-3.0; keeping it optional
-# lets the default install stay MIT-compatible. `extract.py` falls back to pypdf.
-fast-pdf = ["PyMuPDF>=1.23"]
-# OCR rung for scan-only PDFs. Uses PyMuPDF's engine; also needs the Tesseract
-# binary installed on the system PATH (not a pip dependency).
-ocr = ["PyMuPDF>=1.23"]
+# Every runtime dependency above is permissively licensed (BSD / MIT / Apache-2.0
+# / PSF). prisma-s reads a PDF's existing text layer only; scanned PDFs must be
+# OCR'd with an external tool (e.g. ocrmypdf) before analysis.
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",

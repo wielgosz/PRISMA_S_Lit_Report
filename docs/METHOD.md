@@ -23,8 +23,11 @@ dictionary shapes and two matching modes:
 | `D1_Key_Terms` | `Term_Summary` filtered to `include_in_visuals == yes` **and** at least one referencing document, ranked within category. Category order matches the guidebook: Jurisdictional, Supply chain, Farm level, AOI. |
 | Figures 1–3 | `prisma_s/figures.py` — one horizontal bar chart per canonical category (jurisdictional/landscape, supply chain node, farm level), amber `#F0B310`, shared x-scale, legacy `DCF_PRISMA_S_Figure_{1,2,3}_*` filenames, SVG + PNG. |
 
-Byte-exact reproduction of the guidebook also depends on the same corpus and the
-PyMuPDF backend (`pip install "prisma-s-lit-review[fast-pdf]"`).
+Byte-exact reproduction of the guidebook also depends on starting from the same
+corpus **with the same text extracted** — the guidebook run used a PyMuPDF
+frozen-text corpus, whereas prisma-s now reads the pypdf text layer only (see
+"Extraction" below), so scan-heavy documents will differ unless they are OCR'd
+externally first.
 
 ## Pipeline (both modes)
 
@@ -60,29 +63,22 @@ save. This order follows the protocol spec.
 `guess_title` prefers a non-sentinel `/Title`, else the first line of the first
 page longer than 12 characters, else `"Unknown"`.
 
-## Extraction — per-document escalation chain
+## Extraction — pypdf text layer only, no OCR
 
-Heavy processing is spent only on the documents that need it
-(`prisma_s/extract.py::extract_pdf`):
+`prisma_s/extract.py::extract_pdf` reads a PDF's **existing text layer** with
+pypdf (BSD). DOCX goes through python-docx. There is no OCR and no second PDF
+library: prisma-s cannot turn an image-only page into text.
 
-1. **Primary PDF library** — PyMuPDF if the `fast-pdf` extra is installed,
-   otherwise pypdf.
-2. **Other PDF library** — tried when rung 1 returns no text, or fewer than
-   `THIN_WORDS_PER_PAGE` (default 40) words per page on a document of ≥ 2 pages.
-   The result with the most words is kept. (Real example: a 62-page standard
-   that pypdf read as 783 words came back as ~11,000 with PyMuPDF.)
-3. **OCR** — PyMuPDF's `get_textpage_ocr` (Tesseract), tried **only** when a
-   document is still textless after the PDF libraries, and only if `tesseract`
-   is on `PATH`. `enable_ocr=False` / `--no-ocr` skips it; `--ocr-lang`
-   (default `eng`, e.g. `eng+por`) sets the Tesseract language.
+A document whose extracted text is empty, or below `THIN_WORDS_PER_PAGE`
+(default 40) words per page on a document of ≥ 2 pages, is marked `thin` on the
+`ExtractResult`. The runner records this per document in `Run_Metadata`
+(`Backend`, `Needs OCR`, `Status` = `"no text layer - OCR externally and re-run"`
+or `"thin text - verify extraction (may need OCR)"`) and lists the affected
+files in `run_metadata.json` under `documents_needing_ocr`. **OCR those files
+with an external tool** (for example `ocrmypdf in.pdf out.pdf`) and re-run.
 
-Which rung won, whether the chain escalated, and the trace
-(`"pypdf 783w -> pymupdf 11040w"`) are recorded per document in `Run_Metadata`
-(`Backend`, `Escalated`, `Status`) and summarised in `run_metadata.json`
-(`backend_counts`, `escalated_documents`, `textless_documents`). A document with
-no text layer under any rung is reported `ok: no text extracted` — it needs an
-OCR'd source file. A missing PyMuPDF is a one-time notice, never a silent
-per-file downgrade.
+Rationale for dropping PyMuPDF: it is AGPL-3.0. pypdf-only keeps every runtime
+dependency permissively licensed (BSD / MIT / Apache-2.0 / PSF).
 
 ## Large documents — no page chunking
 

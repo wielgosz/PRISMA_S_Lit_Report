@@ -97,8 +97,6 @@ def run_analysis(
     drive_token: str | Path = "token.json",
     keyword_csv: str | Path | None = None,
     emit_citation: bool = True,
-    enable_ocr: bool = True,
-    ocr_lang: str = "eng",
     figures: bool = True,
 ) -> pd.DataFrame:
     """Run a PRISMA-S keyword corpus analysis and write results to Excel.
@@ -161,12 +159,12 @@ def run_analysis(
 
         for fp in file_paths:
             try:
-                res = extract_text(fp, enable_ocr=enable_ocr, ocr_lang=ocr_lang)
+                res = extract_text(fp)
             except Exception as exc:
                 print(f"WARNING: skipping {fp.name} - {exc}")
                 doc_meta.append({
                     "Document Name": fp.name, "Backend": "", "Pages": pd.NA,
-                    "Words": 0, "Chars": 0, "Escalated": False,
+                    "Words": 0, "Chars": 0, "Needs OCR": False,
                     "Status": f"skipped: {exc}",
                 })
                 continue
@@ -174,16 +172,16 @@ def run_analysis(
             title = guess_title(res.metadata, res.first_text)
             year = guess_year(res.metadata, res.first_text)
             if not res.full_text.strip():
-                status = "ok: no text extracted"
-            elif res.escalated:
-                status = f"ok (escalated: {res.chain})"
+                status = "no text layer - OCR externally and re-run"
+            elif res.thin:
+                status = "thin text - verify extraction (may need OCR)"
             else:
                 status = "ok"
             doc_meta.append({
                 "Document Name": fp.name, "Backend": res.backend,
                 "Pages": res.pages if res.pages is not None else pd.NA,
                 "Words": len(res.full_text.split()), "Chars": len(res.full_text),
-                "Escalated": bool(res.escalated), "Status": status,
+                "Needs OCR": bool(res.thin), "Status": status,
             })
 
             common = {
@@ -217,7 +215,10 @@ def run_analysis(
                     })
 
     n_attempted = len(file_paths)
-    n_processed = sum(1 for m in doc_meta if m["Status"].startswith("ok"))
+    # "processed" = extraction did not raise. A document with an empty or thin
+    # text layer was still processed - it just contributes few or no matches and
+    # is flagged in "Needs OCR".
+    n_processed = sum(1 for m in doc_meta if not m["Status"].startswith("skipped:"))
     n_skipped = n_attempted - n_processed
 
     output_xlsx = Path(output_xlsx)
@@ -249,7 +250,7 @@ def run_analysis(
 
     meta_df = pd.DataFrame(
         doc_meta,
-        columns=["Document Name", "Backend", "Pages", "Words", "Chars", "Escalated", "Status"],
+        columns=["Document Name", "Backend", "Pages", "Words", "Chars", "Needs OCR", "Status"],
     )
     if not meta_df.empty:
         meta_df["Pages"] = meta_df["Pages"].astype("Int64")
@@ -258,11 +259,7 @@ def run_analysis(
     for m in doc_meta:
         b = m["Backend"] or "(skipped)"
         backend_counts[b] = backend_counts.get(b, 0) + 1
-    escalated_docs = [m["Document Name"] for m in doc_meta if m.get("Escalated")]
-    textless_docs = [m["Document Name"] for m in doc_meta if m["Status"] == "ok: no text extracted"]
-    from .extract import _ocr_available
-
-    ocr_ready = enable_ocr and _ocr_available()
+    needs_ocr_docs = [m["Document Name"] for m in doc_meta if m.get("Needs OCR")]
 
     # ---- figures --------------------------------------------------------
     figure_files: list[str] = []
@@ -282,9 +279,8 @@ def run_analysis(
         "n_variants": kw.n_variants if is_registry else None,
         "documents_discovered": n_attempted, "documents_processed": n_processed,
         "documents_skipped": n_skipped, "result_rows": len(df),
-        "backend_counts": backend_counts, "escalated_documents": escalated_docs,
-        "textless_documents": textless_docs, "ocr_enabled": bool(enable_ocr),
-        "ocr_available": bool(ocr_ready), "figures": figure_files,
+        "backend_counts": backend_counts,
+        "documents_needing_ocr": needs_ocr_docs, "figures": figure_files,
         "documents": doc_meta_jsonable(doc_meta),
     }
 
@@ -321,17 +317,16 @@ def run_analysis(
         print(f"  Zero_Reference_Terms({len(zero_df)})")
     print(f"  Run_Metadata        ({len(meta_df)} documents)")
     print(f"  Documents: {n_processed} processed, {n_skipped} skipped of {n_attempted} discovered")
-    print(f"  Extraction backends: {backend_counts}")
+    print(f"  Extraction backend: {backend_counts}")
     if figure_files:
         print(f"  Figures: {', '.join(figure_files)}")
-    if escalated_docs:
-        print(f"  Escalated to a heavier extractor: {len(escalated_docs)} document(s)")
-    if textless_docs:
-        why = ("OCR disabled (--no-ocr)" if not enable_ocr
-               else "OCR unavailable - install Tesseract to attempt it" if not ocr_ready
-               else "OCR ran but recovered nothing")
-        print(f"  No text layer ({len(textless_docs)} document(s)) - {why}:")
-        for name in textless_docs:
+    if needs_ocr_docs:
+        print(
+            f"  {len(needs_ocr_docs)} document(s) have an empty or thin text layer. "
+            "prisma-s does not OCR; run these through an external OCR tool "
+            "(e.g. `ocrmypdf in.pdf out.pdf`) and re-run:"
+        )
+        for name in needs_ocr_docs:
             print(f"    - {name}")
     if n_skipped:
         warnings.warn(

@@ -80,19 +80,18 @@ Written beside `--output`:
   `--no-figures` to skip.
 - `run_metadata.json`, `HOW_TO_CITE.txt`.
 
-**PDF extraction is a per-document escalation chain** — a light library first,
-the other PDF library only for documents that come back thin, and OCR
-(Tesseract, opt-in via `[ocr]`) only for documents with no text layer at all.
-Install PyMuPDF for better/faster extraction: `pip install
-"prisma-s-lit-review[fast-pdf]"` (AGPL-3.0; the default pypdf-only install stays
-MIT-clean). See [docs/METHOD.md](docs/METHOD.md).
+**PDF text comes from the existing text layer via pypdf only — no OCR.** Scanned
+or image-only PDFs must be OCR'd with an external tool (e.g. `ocrmypdf`) before
+analysis; the run flags every no-text / thin document in `Run_Metadata`
+(`Needs OCR`) and `run_metadata.json` (`documents_needing_ocr`). Every runtime
+dependency is permissively licensed. See [docs/METHOD.md](docs/METHOD.md).
 
 ## Package layout
 
 ```text
 prisma_s/
   keywords.py     keyword-dictionary loader (bundled dict in data/)
-  extract.py      PDF (pypdf; optional PyMuPDF) and DOCX text extraction
+  extract.py      PDF (pypdf text layer) and DOCX text extraction
   search.py       case-insensitive, alphanumeric-boundary regex matching engine
   drive.py        Google Drive folder ingestion
   compliance.py   PRISMA-S 16-item compliance report builder

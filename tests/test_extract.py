@@ -1,17 +1,25 @@
-"""Extraction integrity and the per-document escalation chain (prisma_s.extract)."""
+"""Extraction integrity (prisma_s.extract) - pypdf text layer only, no OCR."""
 
-import prisma_s.extract as extract
-from prisma_s.extract import ExtractResult, extract_pdf, extract_text, guess_title, guess_year
+from prisma_s.extract import (
+    ExtractResult,
+    extract_pdf,
+    extract_text,
+    guess_title,
+    guess_year,
+    looks_thin,
+)
 
 
 def test_pdf_page_and_word_count(make_pdf):
     pdf = make_pdf(["alpha beta gamma", "delta epsilon", "zeta"])
     res = extract_text(pdf)
     assert res.pages == 3
-    assert res.backend in {"pypdf", "pymupdf", "ocr"}
+    assert res.backend == "pypdf"
     assert set(res.full_text.split()) == {
         "alpha", "beta", "gamma", "delta", "epsilon", "zeta"
     }
+    assert res.thin is True  # 6 words over 3 pages is under the threshold
+    assert res.chain == "pypdf 6w"
 
 
 def test_extraction_is_deterministic(make_pdf):
@@ -28,70 +36,39 @@ def test_docx_has_no_page_count(make_docx):
     assert "second line" in res.full_text
 
 
-def _fake(words, pages, backend):
-    def _fn(_p, *args, **kwargs):
-        return ExtractResult(
-            full_text=" ".join(["w"] * words),
-            first_text="w",
-            metadata={},
-            pages=pages,
-            backend=backend,
-        )
-
-    return _fn
+def test_looks_thin():
+    assert looks_thin("", 10) is True
+    assert looks_thin("only a few words here", 40) is True          # ~0.1 w/page
+    assert looks_thin(" ".join(["w"] * 5000), 40) is False          # 125 w/page
+    assert looks_thin("short single page", 1) is False              # too few pages to judge
 
 
-def test_chain_escalates_from_thin_primary_to_richer_secondary(monkeypatch, tmp_path):
-    monkeypatch.setattr(extract, "_HAVE_FITZ", True)
-    monkeypatch.setattr(extract, "_extract_pdf_pymupdf", _fake(10, 60, "pymupdf"))  # thin
-    monkeypatch.setattr(extract, "_extract_pdf_pypdf", _fake(6000, 60, "pypdf"))    # rich
-    pdf = tmp_path / "x.pdf"
+def test_textless_pdf_is_flagged_not_escalated(monkeypatch, tmp_path):
+    """A scan-only PDF (no text layer) is flagged for external OCR, nothing more."""
+    import pypdf
+
+    class _Empty:
+        metadata = {}
+        pages = [type("P", (), {"extract_text": lambda self: ""})() for _ in range(8)]
+
+    monkeypatch.setattr(pypdf, "PdfReader", lambda *_a, **_k: _Empty())
+
+    pdf = tmp_path / "scan.pdf"
     pdf.write_bytes(b"%PDF-1.4")
     res = extract_pdf(pdf)
     assert res.backend == "pypdf"
-    assert res.escalated is True
-    assert "pymupdf 10w -> pypdf 6000w" in res.chain
+    assert res.full_text.strip() == ""
+    assert res.thin is True
+    assert res.pages == 8
 
 
-def test_chain_stops_at_primary_when_not_thin(monkeypatch, tmp_path):
-    monkeypatch.setattr(extract, "_HAVE_FITZ", True)
-    calls = []
-    monkeypatch.setattr(extract, "_extract_pdf_pymupdf", _fake(5000, 50, "pymupdf"))
-    monkeypatch.setattr(
-        extract, "_extract_pdf_pypdf",
-        lambda p: calls.append(p) or _fake(1, 50, "pypdf")(p),
-    )
-    pdf = tmp_path / "x.pdf"
-    pdf.write_bytes(b"%PDF-1.4")
-    res = extract_pdf(pdf)
-    assert res.backend == "pymupdf" and res.escalated is False
-    assert calls == []  # secondary never invoked
+def test_extract_pdf_has_no_ocr_or_backend_kwargs():
+    import inspect
 
-
-def test_ocr_rung_runs_only_when_still_textless(monkeypatch, tmp_path):
-    monkeypatch.setattr(extract, "_HAVE_FITZ", True)
-    monkeypatch.setattr(extract, "_extract_pdf_pymupdf", _fake(0, 12, "pymupdf"))
-    monkeypatch.setattr(extract, "_extract_pdf_pypdf", _fake(0, 12, "pypdf"))
-    monkeypatch.setattr(extract, "_ocr_available", lambda: True)
-    monkeypatch.setattr(extract, "_ocr_pdf", _fake(400, 12, "ocr"))
-    pdf = tmp_path / "scan.pdf"
-    pdf.write_bytes(b"%PDF-1.4")
-    res = extract_pdf(pdf)
-    assert res.backend == "ocr" and res.escalated is True
-    assert "ocr 400w" in res.chain
-
-
-def test_ocr_skipped_when_disabled(monkeypatch, tmp_path):
-    monkeypatch.setattr(extract, "_HAVE_FITZ", True)
-    monkeypatch.setattr(extract, "_extract_pdf_pymupdf", _fake(0, 12, "pymupdf"))
-    monkeypatch.setattr(extract, "_extract_pdf_pypdf", _fake(0, 12, "pypdf"))
-    monkeypatch.setattr(extract, "_ocr_available", lambda: True)
-    monkeypatch.setattr(extract, "_ocr_pdf", _fake(400, 12, "ocr"))
-    pdf = tmp_path / "scan.pdf"
-    pdf.write_bytes(b"%PDF-1.4")
-    res = extract_pdf(pdf, enable_ocr=False)
-    assert res.backend in {"pymupdf", "pypdf"}
-    assert res.full_text == ""
+    params = inspect.signature(extract_pdf).parameters
+    assert list(params) == ["pdf_path"]
+    params = inspect.signature(extract_text).parameters
+    assert list(params) == ["file_path"]
 
 
 def test_guess_year_prefers_first_page_text():
