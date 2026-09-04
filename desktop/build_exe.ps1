@@ -204,9 +204,14 @@ $distDir = Join-Path $repoRoot 'dist\PRISMA-S-Lit-Review'
 $cliExe  = Join-Path $distDir 'prisma-s.exe'
 
 # --- verify the artifact ---------------------------------------------
+# Do NOT redirect the native exe's stderr into the success stream (2>&1): in
+# Windows PowerShell 5.1 that wraps each stderr line as an ErrorRecord, and
+# with $ErrorActionPreference='Stop' that aborts the script even on a benign
+# one-time notice (e.g. matplotlib's "building the font cache") with exit 0.
+# Capture stdout only; let stderr print straight to the console.
 Write-Host ''
 Write-Host 'Verifying the built bundle (prisma-s.exe selftest)...'
-$out = & $cliExe selftest 2>&1
+$out = & $cliExe selftest
 $ok = ($LASTEXITCODE -eq 0)
 $out | ForEach-Object { Write-Host "  $_" }
 if (-not $ok) {
